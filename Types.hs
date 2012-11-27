@@ -96,22 +96,37 @@ slookup x (Store m) = case (Map.lookup x m) of
 update :: String -> String -> Store -> Store
 update x v (Store m) = Store (Map.insert x v m)
 
+
+arglist = [ "-c"  -- non-interactive
+          , "-v"] -- verbose
+
 main :: IO ()
 main = do
-  repl empty
+  args <- getArgs
+  case length args of
+    0 -> repl empty
+    1 -> putStrLn "Reading from file not supported yet!"
+    2 -> if ( args !! 0 ) `elem` arglist then
+           eval (args !! 1)
+         else
+           putStrLn $ "Unknown arg" ++ (show (args !! 0))
+    otherwise -> putStrLn "Only 0-2 arguments!"
 
 repl :: Store -> IO ()
 repl store = do
   putStr "%> "
   hFlush stdout
   line <- getLine
+  eval line
+  repl store
 --  args <- getArgs
-  case (parse parseStat "Shell Statement" (line)) of
-    Left err -> do
-                putStrLn $ "No match" ++ show err
-    Right v  -> do
-                sh v
-                main
+
+eval :: String -> IO ()
+eval input =  case (parse parseStat "Shell Statement" (input)) of
+  Left err -> do
+    putStrLn $ "No match" ++ show err
+  Right v  -> do
+    sh v
 
 readStat :: String -> String
 readStat input = case parse parseStat "Shell Statement" input of
