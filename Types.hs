@@ -37,28 +37,51 @@ data Value =
     Number Integer -- 3
   | String String  -- abcd
   | Quoted String  -- "ab cde"
-    deriving Show
 
 showVal :: Statement -> String
 showVal (Command cmd args) =  "Running " ++ cmd ++ " | " ++ show args
 -- showVal (Command cmd args) =  testSystem cmd "test"
+
 showVal (Val val) = show val
+{-}
+showVal (Val (String x)) = show x
+showVal (Val (Number x)) = show x
+showVal (Val (Quoted x)) = show x
+-}
 showVal (Assign var val) = (show var) ++ " = " ++ (show val)
 
+showV (String x) = show x
+showV (Number x) = show x
+showV (Quoted x) = show x
+
+
 instance Show Statement where show = showVal
+
+instance Show Value where show = showV
 
 -- testSystem :: String -> [String] -> String
 
 -- String -> [String] -> Either String
 testSystem cmd args = do
-  x <-  (rawSystem cmd args)
+  x <- (rawSystem cmd args)
   case x of
     GHC.IO.Exception.ExitSuccess     -> return $ "success"
     GHC.IO.Exception.ExitFailure err -> return $ "error" ++ (show err)
 
+sh :: Statement -> IO ()
+sh (Command cmd args)= do
+ (cod, out, err) <-  readProcessWithExitCode cmd (map show args) ""
+ putStrLn out
+
+sh (Val (String s))= do
+  (cod, out, err) <-  readProcessWithExitCode s [] ""
+  putStrLn out
+
 main :: IO ()
 main = do args <- getArgs
-          putStrLn (readStat (args !! 0))
+          case (parse parseStat "Shell Statement" (args !! 0)) of
+            Left err -> putStrLn $ "No match" ++ show err
+            Right v  -> sh v
 
 readStat :: String -> String
 readStat input = case parse parseStat "Shell Statement" input of
@@ -66,7 +89,7 @@ readStat input = case parse parseStat "Shell Statement" input of
   Right v  -> "Found value" ++ show v
 
 parseStat :: Parser Statement
-parseStat = parseCommand <|> parseStVal
+parseStat = try parseCommand <|> parseStVal
             -- <|> parseAssign
 
 parseStVal :: Parser Statement
