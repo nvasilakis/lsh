@@ -10,8 +10,12 @@ import qualified Text.PrettyPrint.HughesPJ as PP
 import Text.ParserCombinators.Parsec
 import System.Environment
 
+import System.Cmd
+import System.Process
 import Control.Monad.Error
 import Control.Monad.State
+
+import GHC.IO.Exception
 
 -- Syntax of Shell language
 
@@ -20,10 +24,9 @@ type Args = [Value]
 
 data Statement =
     Command String Args       -- echo "a b"
-  | Val Value
-  | Assign Variable Value     -- x = e
-    deriving Show
-
+  | Val Value                 -- 3 or string or "quoted String"
+  | Assign Variable Value     -- Assign x 3, Assign, x "quoted String"
+--  deriving Show
 {-
 data Expression =
     Var Variable                    -- x
@@ -36,6 +39,23 @@ data Value =
   | Quoted String  -- "ab cde"
     deriving Show
 
+showVal :: Statement -> String
+showVal (Command cmd args) =  "Running " ++ cmd ++ " | " ++ show args
+-- showVal (Command cmd args) =  testSystem cmd "test"
+showVal (Val val) = show val
+showVal (Assign var val) = (show var) ++ " = " ++ (show val)
+
+instance Show Statement where show = showVal
+
+-- testSystem :: String -> [String] -> String
+
+-- String -> [String] -> Either String
+testSystem cmd args = do
+  x <-  (rawSystem cmd args)
+  case x of
+    GHC.IO.Exception.ExitSuccess     -> return $ "success"
+    GHC.IO.Exception.ExitFailure err -> return $ "error" ++ (show err)
+
 main :: IO ()
 main = do args <- getArgs
           putStrLn (readStat (args !! 0))
@@ -46,9 +66,7 @@ readStat input = case parse parseStat "Shell Statement" input of
   Right v  -> "Found value" ++ show v
 
 parseStat :: Parser Statement
-parseStat = --parseStVal
-            -- <|>
-  parseCommand
+parseStat = parseCommand <|> parseStVal
             -- <|> parseAssign
 
 parseStVal :: Parser Statement
@@ -84,7 +102,7 @@ parseString = do
 parseQuoted :: Parser Value
 parseQuoted = do
     char '"'
-    x <- many (noneOf "\\\"" <|> parseQuotes) -- any character except \ or ""
+    x <- many (noneOf "\\\"" <|> parseQuotes) -- any character except \ or "
     char '"'
     return $ Quoted x
 
