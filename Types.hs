@@ -50,7 +50,7 @@ showVal (Val (Quoted x)) = show x
 -}
 showVal (Assign var val) = (show var) ++ " = " ++ (show val)
 
-showV (String x) = show x
+showV (String x) =  x
 showV (Number x) = show x
 showV (Quoted x) = show x
 
