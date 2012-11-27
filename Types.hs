@@ -15,13 +15,14 @@ import Control.Monad.State
 
 -- Syntax of Shell language
 
-newtype Variable = V String
-newtype Args = A [Value]
+type Variable = String
+type Args = [Value]
 
 data Statement =
     Command String Args       -- echo "a b"
   | Val Value
   | Assign Variable Value     -- x = e
+    deriving Show
 
 {-
 data Expression =
@@ -33,6 +34,7 @@ data Value =
     Number Integer -- 3
   | String String  -- abcd
   | Quoted String  -- "ab cde"
+    deriving Show
 
 main :: IO ()
 main = do args <- getArgs
@@ -41,7 +43,7 @@ main = do args <- getArgs
 readStat :: String -> String
 readStat input = case parse parseStat "Shell Statement" input of
   Left err -> "No match: " ++ show err
-  Right _  -> "Found value"
+  Right v  -> "Found value" ++ show v
 
 parseStat :: Parser Statement
 parseStat = parseStVal <|> parseCommand
@@ -59,7 +61,7 @@ parseCommand :: Parser Statement
 parseCommand = do
   cmd  <- many (noneOf "!#$%| >")
   args <- sepBy parseValue spaces
-  return $ Command cmd (A args)
+  return $ Command cmd (args)
 
 parseAssign :: Parser Statement
 parseAssign = undefined
