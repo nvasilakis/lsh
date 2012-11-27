@@ -48,7 +48,7 @@ readStat input = case parse parseStat "Shell Statement" input of
 parseStat :: Parser Statement
 parseStat = --parseStVal
             -- <|>
-             parseCommand
+  parseCommand
             -- <|> parseAssign
 
 parseStVal :: Parser Statement
@@ -62,9 +62,10 @@ symbol = oneOf "!#$%| >"
 parseCommand :: Parser Statement
 parseCommand = do
   (String cmd)  <- parseString
+  skipMany1 space
   args <- sepBy parseValue (skipMany1 space)
 --  return $ Command cmd ([ String "one"])
-  return $ Command cmd (tail args)
+  return $ Command cmd (args)
 
 parseAssign :: Parser Statement
 parseAssign = undefined
@@ -77,7 +78,7 @@ parseNumber = liftM (Number . read) $ many1 digit
 
 parseString :: Parser Value
 parseString = do
-  str <- many (noneOf "!#$%| >")
+  str <- many1 (noneOf "!#$%| >")
   return $ String str
 
 parseQuoted :: Parser Value
