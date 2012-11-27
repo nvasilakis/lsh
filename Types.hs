@@ -78,8 +78,30 @@ sh (Val (String s))= do
   (cod, out, err) <-  readProcessWithExitCode s [] ""
   putStrLn out
 
+
+-- a Store holding the environment
+data Store = Store (Map String String) deriving (Eq, Show)
+
+-- Empty store
+empty :: Store
+empty = Store Map.empty
+
+-- lookup variables in the store
+slookup :: String -> Store -> String
+slookup x (Store m) = case (Map.lookup x m) of
+    Just v ->  v
+    Nothing -> "" -- change this?
+
+-- update the value of a variable in the store
+update :: String -> String -> Store -> Store
+update x v (Store m) = Store (Map.insert x v m)
+
 main :: IO ()
 main = do
+  repl empty
+
+repl :: Store -> IO ()
+repl store = do
   putStr "%> "
   hFlush stdout
   line <- getLine
