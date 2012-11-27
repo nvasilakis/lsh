@@ -3,6 +3,7 @@ module Types where
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad
+import System.IO
 
 import Text.PrettyPrint.HughesPJ (Doc, (<+>),($$),(<>))
 import qualified Text.PrettyPrint.HughesPJ as PP
@@ -78,10 +79,17 @@ sh (Val (String s))= do
   putStrLn out
 
 main :: IO ()
-main = do args <- getArgs
-          case (parse parseStat "Shell Statement" (args !! 0)) of
-            Left err -> putStrLn $ "No match" ++ show err
-            Right v  -> sh v
+main = do
+  putStr "%> "
+  hFlush stdout
+  line <- getLine
+--  args <- getArgs
+  case (parse parseStat "Shell Statement" (line)) of
+    Left err -> do
+                putStrLn $ "No match" ++ show err
+    Right v  -> do
+                sh v
+                main
 
 readStat :: String -> String
 readStat input = case parse parseStat "Shell Statement" input of
