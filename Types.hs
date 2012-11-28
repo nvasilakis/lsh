@@ -118,7 +118,7 @@ sh (Command cmd args)= do
     (Just exec) ->  exec args
     Nothing     -> do
       (cod, out, err) <- readProcessWithExitCode cmd (map show args) ""
-      putStrLn $ out ++ "1"
+      putStrLn $ out
 
 sh (Val (String cmd))= do
   let action = lookup cmd inExecTable
@@ -126,7 +126,7 @@ sh (Val (String cmd))= do
     (Just exec) ->  exec []
     Nothing     -> do
       (cod, out, err) <-  readProcessWithExitCode cmd [] ""
-      putStrLn $ out ++ "2"
+      putStrLn $ out 
 
 -- a Store holding the environment
 data Store = Store (Map String String) deriving (Eq, Show)
