@@ -16,6 +16,7 @@ inExecTable = [("cd"     , lcd)
               ,("quit"   ,lexit)
               ,("pwd"    ,lpwd)
               ,("lambda" ,lambda)
+              ,("history",lhist)
               ,("help"   ,lhelp)]
 
 lcd :: [Value] -> IO ()
@@ -41,6 +42,11 @@ lecho w = do
 lambda :: [Value] -> IO ()
 lambda _ = do
   pp H.lambda
+
+-- TODO: print history values
+lhist :: [Value] -> IO ()
+lhist _ = do
+  putStrLn "undefined"
 
 lexit :: [Value] -> IO ()
 lexit _ = exitWith $ ExitSuccess
