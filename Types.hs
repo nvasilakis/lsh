@@ -5,6 +5,9 @@ import qualified Data.Map as Map
 import Control.Monad
 import System.IO
 
+--import Help
+import qualified Help as H
+
 import Text.PrettyPrint.HughesPJ (Doc, (<+>),($$),(<>))
 import qualified Text.PrettyPrint.HughesPJ as PP
 
@@ -73,11 +76,13 @@ testSystem cmd args = do
     GHC.IO.Exception.ExitFailure err -> return $ "error" ++ (show err)
 
 
-exec :: [(String, [Value] -> IO ())]
-exec = [("cd", lcd)
-       ,("echo", lecho)
-       ,("exit", lexit)
-       ,("pwd",  lpwd)]
+inExecTable :: [(String, [Value] -> IO ())]
+inExecTable = [("cd"     , lcd)
+              ,("echo"   ,lecho)
+              ,("exit"   ,lexit)
+              ,("pwd"    ,lpwd)
+              ,("lambda" ,lambda)
+              ,("help"   ,lhelp)]
 
 lcd :: [Value] -> IO ()
 lcd v  = do
@@ -88,25 +93,40 @@ lpwd _ = do
   x <- getCurrentDirectory
   putStrLn x
 
+lhelp :: [Value] -> IO ()
+lhelp _ = do
+  putStrLn H.help
+
 lecho :: [Value] -> IO ()
 lecho w = do
   if ((String "-n") `elem` w) then do
-    putStr $ (concat . filter (/="a") . map show) w
+    putStr $ (concat . filter (/="-n") . map show) w
     else do
-    putStr $ (concat . map show) w
+    putStrLn $ (concat . map show) w
+
+lambda :: [Value] -> IO ()
+lambda _ = do
+  putStrLn H.lambda
 
 lexit :: [Value] -> IO ()
 lexit _ = exitWith $ ExitSuccess
 
-
 sh :: Statement -> IO ()
 sh (Command cmd args)= do
- (cod, out, err) <-  readProcessWithExitCode cmd (map show args) ""
- putStrLn out
+  let action = lookup cmd inExecTable
+  case action of
+    (Just exec) ->  exec args
+    Nothing     -> do
+      (cod, out, err) <- readProcessWithExitCode cmd (map show args) ""
+      putStrLn $ out ++ "1"
 
-sh (Val (String s))= do
-  (cod, out, err) <-  readProcessWithExitCode s [] ""
-  putStrLn out
+sh (Val (String cmd))= do
+  let action = lookup cmd inExecTable
+  case action of
+    (Just exec) ->  exec []
+    Nothing     -> do
+      (cod, out, err) <-  readProcessWithExitCode cmd [] ""
+      putStrLn $ out ++ "2"
 
 -- a Store holding the environment
 data Store = Store (Map String String) deriving (Eq, Show)
@@ -143,7 +163,7 @@ main = do
 
 repl :: Store -> IO ()
 repl store = do
-  putStr "%> "
+  putStr "λ> "
   hFlush stdout
   line <- getLine
   eval line
