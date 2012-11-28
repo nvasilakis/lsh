@@ -18,6 +18,8 @@ import Control.Monad.State
 
 import GHC.IO.Exception
 
+import System.Exit
+import System.Directory
 -- Syntax of Shell language
 
 type Variable = String
@@ -38,6 +40,7 @@ data Value =
     Number Integer -- 3
   | String String  -- abcd
   | Quoted String  -- "ab cde"
+    deriving (Eq)
 
 showVal :: Statement -> String
 showVal (Command cmd args) =  "Running " ++ cmd ++ " | " ++ show args
@@ -69,6 +72,33 @@ testSystem cmd args = do
     GHC.IO.Exception.ExitSuccess     -> return $ "success"
     GHC.IO.Exception.ExitFailure err -> return $ "error" ++ (show err)
 
+
+exec :: [(String, [Value] -> IO ())]
+exec = [("cd", lcd)
+       ,("echo", lecho)
+       ,("exit", lexit)
+       ,("pwd",  lpwd)]
+
+lcd :: [Value] -> IO ()
+lcd v  = do
+  setCurrentDirectory $ show $ v !! 0
+
+lpwd :: [Value] -> IO ()
+lpwd _ = do
+  x <- getCurrentDirectory
+  putStrLn x
+
+lecho :: [Value] -> IO ()
+lecho w = do
+  if ((String "-n") `elem` w) then do
+    putStr $ (concat . filter (/="a") . map show) w
+    else do
+    putStr $ (concat . map show) w
+
+lexit :: [Value] -> IO ()
+lexit _ = exitWith $ ExitSuccess
+
+
 sh :: Statement -> IO ()
 sh (Command cmd args)= do
  (cod, out, err) <-  readProcessWithExitCode cmd (map show args) ""
@@ -77,7 +107,6 @@ sh (Command cmd args)= do
 sh (Val (String s))= do
   (cod, out, err) <-  readProcessWithExitCode s [] ""
   putStrLn out
-
 
 -- a Store holding the environment
 data Store = Store (Map String String) deriving (Eq, Show)
