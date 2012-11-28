@@ -13,6 +13,7 @@ inExecTable :: [(String, [Value] -> IO ())]
 inExecTable = [("cd"     , lcd)
               ,("echo"   ,lecho)
               ,("exit"   ,lexit)
+              ,("quit"   ,lexit)
               ,("pwd"    ,lpwd)
               ,("lambda" ,lambda)
               ,("help"   ,lhelp)]
@@ -24,22 +25,22 @@ lcd v  = do
 lpwd :: [Value] -> IO ()
 lpwd _ = do
   x <- getCurrentDirectory
-  putStrLn x
+  pp $ x ++ "\n"
 
 lhelp :: [Value] -> IO ()
 lhelp _ = do
-  putStrLn H.help
+  pp H.help
 
 lecho :: [Value] -> IO ()
 lecho w = do
   if ((String "-n") `elem` w) then do
-    putStr $ (concat . filter (/="-n") . map show) w
+    pp $ (concat . filter (/="-n") . map show) w
     else do
-    putStrLn $ (concat . map show) w
+    putStrLn  $ (concat . map show)  w 
 
 lambda :: [Value] -> IO ()
 lambda _ = do
-  putStrLn H.lambda
+  pp H.lambda
 
 lexit :: [Value] -> IO ()
 lexit _ = exitWith $ ExitSuccess
@@ -51,7 +52,7 @@ sh (Command cmd args)= do
     (Just exec) ->  exec args
     Nothing     -> do
       (cod, out, err) <- readProcessWithExitCode cmd (map show args) ""
-      putStrLn $ out
+      pp $ out
 
 sh (Val (String cmd))= do
   let action = lookup cmd inExecTable
@@ -59,4 +60,7 @@ sh (Val (String cmd))= do
     (Just exec) ->  exec []
     Nothing     -> do
       (cod, out, err) <-  readProcessWithExitCode cmd [] ""
-      putStrLn $ out 
+      pp $ out 
+
+pp :: String -> IO ()
+pp str = putStr str >> hFlush stdout
