@@ -4,33 +4,22 @@ import Text.ParserCombinators.Parsec
 import Types
 import Control.Monad
 
-readStat :: String -> String
-readStat input = case parse parseStat "Shell Statement" input of
-  Left err -> "No match: " ++ show err
-  Right v  -> "Found value" ++ show v
+parseHandler :: Parser Statement
+parseHandler = try parseCommand <|> parseStVal -- <|> parseAssign
 
-parseStat :: Parser Statement
-parseStat = try parseCommand <|> parseStVal
-            -- <|> parseAssign
-
-parseStVal :: Parser Statement
-parseStVal = do
-  val <- parseNumber <|> parseQuoted <|> parseString
-  return $ Val val
-
-symbol :: Parser Char
-symbol = oneOf "!#$%| >"
-
+---------- Parse Command
 parseCommand :: Parser Statement
 parseCommand = do
   (String cmd)  <- parseString
   skipMany1 space
   args <- sepBy parseValue (skipMany1 space)
---  return $ Command cmd ([ String "one"])
   return $ Command cmd (args)
 
-parseAssign :: Parser Statement
-parseAssign = undefined
+---------- Parse Value
+parseStVal :: Parser Statement
+parseStVal = do
+  val <- parseValue
+  return $ Val val
 
 parseValue :: Parser Value
 parseValue = parseNumber <|> parseQuoted <|> parseString
@@ -50,8 +39,7 @@ parseQuoted = do
     char '"'
     return $ Quoted x
 
--- parse \\ and \"
-parseQuotes :: Parser Char
+parseQuotes :: Parser Char-- parse \\ and \"
 parseQuotes = do
     char '\\'
     x <- oneOf "\\\"nrt"
@@ -60,3 +48,17 @@ parseQuotes = do
       'r' -> '\r'
       't' -> '\t'
       _   -> x
+
+---------- Parse Assign
+parseAssign :: Parser Statement
+parseAssign = undefined
+
+---------- Parse Helpers
+readHelper :: String -> String -- Read helper for Complex statements
+readHelper input = case parse parseHandler "Shell Statement" input of
+  Left err -> "No match: " ++ show err
+  Right v  -> "Found value" ++ show v
+
+symbol :: Parser Char
+symbol = oneOf "!#$%| >"
+

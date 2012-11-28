@@ -56,8 +56,9 @@ repl store = do
   repl store
 --  args <- getArgs
 
+-- TODO: Should this be in Evaluator module?
 eval :: String -> IO ()
-eval input =  case (parse parseStat "Shell Statement" (input)) of
+eval input =  case (parse parseHandler "Shell Statement" (input)) of
   Left err -> do
     putStrLn $ "No match" ++ show err
   Right v  -> do
