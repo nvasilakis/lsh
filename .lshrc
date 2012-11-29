@@ -11,5 +11,5 @@
 # The user can set these options interactively for the session by
 # issuing 'set'
 
-prompt : %>
+prompt : [λ] >
 debug  : false
