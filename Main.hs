@@ -41,22 +41,24 @@ main :: IO ()
 main = do
   args <- getArgs
   conf <- lshInit
+  hist <- lshHist -- TODO: this needs to be put lower for non interactive
   case length args of
-    0 -> repl empty conf
+    0 -> repl (Universe hist conf)
     1 -> putStrLn "Reading from file not supported yet!"
     2 -> if ( args !! 0 ) `elem` arglist then
-           eval (args !! 1)
+           eval (args !! 1) (Universe hist conf)
          else
            putStrLn $ "Unknown arg" ++ (show (args !! 0))
     otherwise -> putStrLn "Only 0-2 arguments!"
 
-repl :: Store  -> Config -> IO ()
-repl store conf = do
-  putStr $ ps1 conf
+-- history needs to be applied in repl as evaluation does not append
+repl ::  Uni -> IO ()
+repl uni = do
+  putStr $ ps1 $ configuration uni
   hFlush stdout
   line <- getLine
-  eval line
-  repl store conf
+  eval line uni
+  repl uni
 --  args <- getArgs
 
 ps1 :: Config -> String
@@ -65,12 +67,12 @@ ps1 conf = case (Map.lookup "prompt" conf) of
   Nothing -> "λ> "
 
 -- TODO: Should this be in Evaluator module?
-eval :: String -> IO ()
-eval input =  case (parse parseHandler "Shell Statement" (input)) of
+eval :: String -> Uni -> IO ()
+eval input uni =  case (parse parseHandler "Shell Statement" (input)) of
   Left err -> do
     putStrLn $ "No match" ++ show err
   Right v  -> do
-    sh v
+    sh v uni
 
 {-
 parseInit :: String -> IO (Config)

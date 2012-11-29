@@ -14,6 +14,7 @@ type Config = Map.Map String String
 data Universe = Universe { history :: Hist
                          , configuration :: Config }
 -- we can definitely name it `Un` though~!
+type Uni = Universe
 
 -- 4 examples of more elaborate scripting
 data Complex =
