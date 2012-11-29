@@ -19,6 +19,8 @@ import Control.Monad.State
 -- a Store holding the environment
 data Store = Store (Map String String) deriving (Eq, Show)
 
+type Hist = [String]
+
 -- Empty store
 empty :: Store
 empty = Store Map.empty
@@ -79,6 +81,7 @@ parseInit init = case (parseFromFile file init) of
     Right xs -> return $ Map.fromList (reverse xs)
 -}
 
+-- TODO: Add home into the config
 -- looks first locally and then in home
 lshInit :: IO (Config)
 lshInit = do
@@ -89,4 +92,18 @@ lshInit = do
       readConfig (h ++ ".lshrc")
     True -> readConfig ".lshrc"
 
--- Pretty printing for the Shell language
+-- TODO: Check if user changed his histfile
+-- TODO: We could probably move Hist to Text
+lshHist :: IO (Hist)
+lshHist = do
+--  h <- getHomeDirectory
+  let h = "./"
+  x <- doesFileExist ( h ++ ".lsh_history")
+  case x of
+    True  -> do
+      handle <- openFile (h ++ ".lsh_history") ReadMode
+      contents <- hGetContents handle
+      hClose handle
+      return $ lines contents
+    False -> do
+      return []

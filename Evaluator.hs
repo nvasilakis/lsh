@@ -49,8 +49,15 @@ lhist :: [Value] -> IO ()
 lhist _ = do
   putStrLn "undefined"
 
+-- TODO change history to non-local
 lexit :: [Value] -> IO ()
-lexit _ = exitWith $ ExitSuccess
+lexit _ = do
+  -- h <- getHomeDirectory
+  (tempName, tempHandle) <- openTempFile "." "temp"
+  hPutStr tempHandle $ unlines ["this", "isn't", "history"]
+  hClose tempHandle
+  renameFile tempName ".lsh_history"
+  exitWith $ ExitSuccess
 
 lset :: [Value] -> IO ()
 lset x = do
