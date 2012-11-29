@@ -6,9 +6,7 @@ import qualified Data.Map as Map
 import Text.ParserCombinators.Parsec
 import Data.Either
 import Data.Maybe
-
-type Config = Map.Map String String
-
+import Types
 
 readConfig:: SourceName -> IO (Config)
 readConfig name = do

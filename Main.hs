@@ -6,6 +6,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import System.IO
 import Text.ParserCombinators.Parsec
+import Types -- try to remove this one!
 import Parser
 import Evaluator
 import ConfigFile
@@ -19,9 +20,6 @@ import Control.Monad.State
 -- a Store holding the environment
 data Store = Store (Map String String) deriving (Eq, Show)
 
-type Hist = [String]
-
--- Empty store
 empty :: Store
 empty = Store Map.empty
 
