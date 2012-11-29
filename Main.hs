@@ -1,12 +1,14 @@
 module Main where
 
 import System.Environment
+import System.Directory
 import Data.Map (Map)
 import qualified Data.Map as Map
 import System.IO
 import Text.ParserCombinators.Parsec
 import Parser
 import Evaluator
+import ConfigFile
 
 --import Text.PrettyPrint.HughesPJ (Doc, (<+>),($$),(<>))
 --import qualified Text.PrettyPrint.HughesPJ as PP
@@ -38,8 +40,9 @@ arglist = [ "-c"  -- non-interactive
 main :: IO ()
 main = do
   args <- getArgs
+  conf <- lshInit
   case length args of
-    0 -> repl empty
+    0 -> repl empty conf
     1 -> putStrLn "Reading from file not supported yet!"
     2 -> if ( args !! 0 ) `elem` arglist then
            eval (args !! 1)
@@ -47,14 +50,19 @@ main = do
            putStrLn $ "Unknown arg" ++ (show (args !! 0))
     otherwise -> putStrLn "Only 0-2 arguments!"
 
-repl :: Store -> IO ()
-repl store = do
-  putStr "λ> "
+repl :: Store  -> Config -> IO ()
+repl store conf = do
+  putStr $ ps1 conf
   hFlush stdout
   line <- getLine
   eval line
-  repl store
+  repl store conf
 --  args <- getArgs
+
+ps1 :: Config -> String
+ps1 conf = case (Map.lookup "prompt" conf) of
+  Just x -> x
+  Nothing -> "λ> "
 
 -- TODO: Should this be in Evaluator module?
 eval :: String -> IO ()
@@ -64,5 +72,21 @@ eval input =  case (parse parseHandler "Shell Statement" (input)) of
   Right v  -> do
     sh v
 
+{-
+parseInit :: String -> IO (Config)
+parseInit init = case (parseFromFile file init) of
+    Left err -> return $ Map.empty
+    Right xs -> return $ Map.fromList (reverse xs)
+-}
+
+-- looks first locally and then in home
+lshInit :: IO (Config)
+lshInit = do
+  x <- doesFileExist ".lshrc"
+  case x of
+    False -> do
+      h <- getHomeDirectory
+      readConfig (h ++ ".lshrc")
+    True -> readConfig ".lshrc"
 
 -- Pretty printing for the Shell language
