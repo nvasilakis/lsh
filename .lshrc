@@ -1,0 +1,15 @@
+# This is an example .lshrc, the configuration file for λ-shell. The
+# options must be in the form of 
+# 
+# option DEL value 
+# 
+# where DEL can be either ':' or '='. Spaces or tabs do not matter, and
+# each line can have comments at any position.
+# 
+# Available options: prompt, debug
+# 
+# The user can set these options interactively for the session by
+# issuing 'set'
+
+prompt : %>
+debug  : false
