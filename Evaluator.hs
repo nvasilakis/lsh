@@ -14,6 +14,7 @@ inExecTable = [("cd"     , lcd)
               ,("echo"   ,lecho)
               ,("exit"   ,lexit)
               ,("quit"   ,lexit)
+              ,("set"    ,lset)
               ,("pwd"    ,lpwd)
               ,("lambda" ,lambda)
               ,("history",lhist)
@@ -37,7 +38,7 @@ lecho w = do
   if ((String "-n") `elem` w) then do
     pp $ (concat . filter (/="-n") . map show) w
     else do
-    putStrLn  $ (concat . map show)  w 
+    putStrLn  $ (concat . map show)  w
 
 lambda :: [Value] -> IO ()
 lambda _ = do
@@ -50,6 +51,10 @@ lhist _ = do
 
 lexit :: [Value] -> IO ()
 lexit _ = exitWith $ ExitSuccess
+
+lset :: [Value] -> IO ()
+lset x = do
+  putStrLn $ show x
 
 sh :: Statement -> IO ()
 sh (Command cmd args)= do
@@ -66,7 +71,7 @@ sh (Val (String cmd))= do
     (Just exec) ->  exec []
     Nothing     -> do
       (cod, out, err) <-  readProcessWithExitCode cmd [] ""
-      pp $ out 
+      pp $ out
 
 pp :: String -> IO ()
 pp str = putStr str >> hFlush stdout
