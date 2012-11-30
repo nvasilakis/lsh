@@ -17,23 +17,6 @@ import ConfigFile
 import Control.Monad.Error
 import Control.Monad.State
 
--- a Store holding the environment
-data Store = Store (Map String String) deriving (Eq, Show)
-
-empty :: Store
-empty = Store Map.empty
-
--- lookup variables in the store
-slookup :: String -> Store -> String
-slookup x (Store m) = case (Map.lookup x m) of
-    Just v ->  v
-    Nothing -> "" -- change this?
-
--- update the value of a variable in the store
-update :: String -> String -> Store -> Store
-update x v (Store m) = Store (Map.insert x v m)
-
-
 arglist = [ "-c"  -- non-interactive
           , "-v"] -- verbose
 
@@ -44,7 +27,7 @@ main = do
   hist <- lshHist -- TODO: this needs to be put lower for non interactive
   case length args of
     0 -> repl (Universe hist conf)
-    1 -> putStrLn "Reading from file not supported yet!"
+    1 -> putStrLn $ simple args (Universe hist conf)
     2 -> if ( args !! 0 ) `elem` arglist then
            eval (args !! 1) (Universe hist conf)
          else
@@ -58,8 +41,17 @@ repl uni = do
   hFlush stdout
   line <- getLine
   eval line uni
-  repl uni
+  repl (updateHistory line uni)
 --  args <- getArgs
+
+-- TODO: Append normally, and reverse when read
+updateHistory :: String -> Uni -> Uni
+updateHistory line uni = Universe ((history uni) ++ [line]) (configuration uni)
+
+simple :: [String] -> Uni -> String -- eliminating new line
+simple args uni = case (args !! 0) of
+  "-f" -> "No parse file functionality"
+  _    -> init . unlines $ history uni
 
 ps1 :: Config -> String
 ps1 conf = case (Map.lookup "prompt" conf) of
@@ -92,18 +84,19 @@ lshInit = do
       readConfig (h ++ ".lshrc")
     True -> readConfig ".lshrc"
 
--- TODO: Check if user changed his histfile
+-- TODO: Check if user changed location of his histfile
 -- TODO: We could probably move Hist to Text
 lshHist :: IO (Hist)
 lshHist = do
 --  h <- getHomeDirectory
-  let h = "./"
-  x <- doesFileExist ( h ++ ".lsh_history")
+--  let h = "./"
+  x <- doesFileExist ( ".lsh_history")
   case x of
     True  -> do
-      handle <- openFile (h ++ ".lsh_history") ReadMode
-      contents <- hGetContents handle
-      hClose handle
-      return $ lines contents
+      text <- readFile (".lsh_history")
+      --contents <- hGetContents handle
+      --putStrLn contents
+      --hClose handle
+      return $ lines text
     False -> do
       return []

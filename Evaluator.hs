@@ -48,22 +48,23 @@ lambda _ _ = do
 lhist :: [Value] -> Uni -> IO ()
 lhist args uni = do
   case (length args) of
-    0 -> putStrLn $ unlines $ history uni
+    0 -> pp $ expose (toInteger . length $ history uni) $ history uni
     1 -> case (args !! 0) of
-      Number n -> putStrLn $ expose n $ history uni
+      Number n -> pp $ expose n $ history uni
       _ -> putStrLn "history: strings not supported"
     _ -> putStrLn "Wrong number of arguments"
 
   where expose :: Integer -> [String]-> String
-        expose n xs= unlines $ zipWith (\ x y -> x ++ "\t\t" ++ y)
-                   (map show [1..]) (reverse $ take (fromIntegral n) $ reverse xs)
+        expose n xs= unlines $ zipWith (\ x y -> x ++ "\t" ++ y)
+                    (map show [1..])
+                     (reverse $ take (fromIntegral n) $ reverse xs)
 
 -- TODO change history to non-local
 lexit :: [Value] -> Uni -> IO ()
-lexit _ _ = do
+lexit _ uni = do
   -- h <- getHomeDirectory
   (tempName, tempHandle) <- openTempFile "." "temp"
-  hPutStr tempHandle $ unlines ["this", "isn't", "history"]
+  hPutStr tempHandle $ unlines $ history uni
   hClose tempHandle
   renameFile tempName ".lsh_history"
   exitWith $ ExitSuccess

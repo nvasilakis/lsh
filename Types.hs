@@ -8,6 +8,12 @@ type Variable = String
 type Args = [Value]
 type Hist = [String]
 type Config = Map.Map String String
+{-
+TODO: We need to think about how to represent default values
+(Monad? Typeclass that has default? I think it is a monad because
+ it can capture two values (a la Error), either found or not. We
+can pattern match on maybe till then)
+-}
 
 -- Env would be better, but it is already semantically
 -- "taken" in the context of a shell (man env)!
