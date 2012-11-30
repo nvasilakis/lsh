@@ -11,5 +11,11 @@
 # The user can set these options interactively for the session by
 # issuing 'set'
 
-prompt : [λ] >
-debug  : false
+# can utilize (hst|usr|dir|[cmd])*
+prompt   : [λ] > 
+# true | false
+debug    : false
+# int
+histfile : 1000
+# int
+histsize : 1000
