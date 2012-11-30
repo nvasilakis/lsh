@@ -48,16 +48,17 @@ lambda _ _ = do
 lhist :: [Value] -> Uni -> IO ()
 lhist args uni = do
   case (length args) of
-    0 -> pp $ expose (toInteger . length $ history uni) $ history uni
+    0 -> pp $ expose (toInteger $ length (history uni) - 10) $ history uni
     1 -> case (args !! 0) of
       Number n -> pp $ expose n $ history uni
       _ -> putStrLn "history: strings not supported"
+           -- we need real state to utilize "-c"
     _ -> putStrLn "Wrong number of arguments"
 
   where expose :: Integer -> [String]-> String
-        expose n xs= unlines $ zipWith (\ x y -> x ++ "\t" ++ y)
-                    (map show [1..])
-                     (reverse $ take (fromIntegral n) $ reverse xs)
+        expose n xs= unlines $ drop (fromIntegral (n - 1))
+                     $ zipWith (\ x y -> x ++ "\t" ++ y)
+                     (map show [1..]) xs
 
 -- TODO change history to non-local
 lexit :: [Value] -> Uni -> IO ()
