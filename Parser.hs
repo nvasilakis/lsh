@@ -5,7 +5,7 @@ import Types
 import Control.Monad
 
 parseHandler :: Parser Statement
-parseHandler = try parseCommand <|> parseStVal -- <|> parseAssign
+parseHandler = try parseCommand <|> parseStVal <|> parseAssign
 
 ---------- Parse Command
 parseCommand :: Parser Statement
@@ -51,9 +51,23 @@ parseQuotes = do
 
 ---------- Parse Assign
 parseAssign :: Parser Statement
-parseAssign = undefined
+parseAssign = do
+  var <- parseAssVar
+  char '='
+  val <- parseNumber <|> parseQuoted <|> parseString
+  return $ Assign var val
 
----------- Parse Helpers
+parseAssVar :: Parser String
+parseAssVar = do
+         c <- letter <|> char '_'
+         cs <- many (letter <|> digit <|> char '_')
+         return (c:cs)
+         <?> "Error parsing variable"
+
+
+
+
+---------- Parse Helpers -- used mostly for testing
 readHelper :: String -> String -- Read helper for Complex statements
 readHelper input = case parse parseHandler "Shell Statement" input of
   Left err -> "No match: " ++ show err
@@ -61,4 +75,3 @@ readHelper input = case parse parseHandler "Shell Statement" input of
 
 symbol :: Parser Char
 symbol = oneOf "!#$%| >"
-
