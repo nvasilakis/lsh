@@ -20,28 +20,34 @@ import Control.Monad.State
 arglist = [ "-c"  -- non-interactive
           , "-v"] -- verbose
 
+testStore :: Map Variable Value
+testStore = Map.empty
+
 main :: IO ()
 main = do
   args <- getArgs
   conf <- lshInit
   hist <- lshHist -- TODO: this needs to be put lower for non interactive
   case length args of
-    0 -> repl (Universe hist conf)
+    0 -> repl (Universe hist conf) testStore
     1 -> putStrLn $ simple args (Universe hist conf)
-    2 -> if ( args !! 0 ) `elem` arglist then
-           eval (args !! 1) (Universe hist conf)
+    2 -> if ( args !! 0 ) `elem` arglist then 
+           do
+           eval (args !! 1) (Universe hist conf) testStore
+           return ()
          else
            putStrLn $ "Unknown arg" ++ (show (args !! 0))
     otherwise -> putStrLn "Only 0-2 arguments!"
 
 -- history needs to be applied in repl as evaluation does not append
-repl ::  Uni -> IO ()
-repl uni = do
+repl :: Uni -> Map Variable Value -> IO ()
+repl uni store = do
   putStr $ ps1 $ configuration uni
   hFlush stdout
   line <- getLine
-  eval line uni
-  repl (updateHistory line uni)
+  newStore <- eval line uni store
+  putStrLn $ "Current Store: " ++ show newStore
+  repl (updateHistory line uni) newStore
 --  args <- getArgs
 
 -- TODO: Append normally, and reverse when read
@@ -59,12 +65,13 @@ ps1 conf = case (Map.lookup "prompt" conf) of
   Nothing -> "λ> "
 
 -- TODO: Should this be in Evaluator module?
-eval :: String -> Uni -> IO ()
-eval input uni =  case (parse parseHandler "Shell Statement" (input)) of
+eval :: String -> Uni -> Map Variable Value -> IO (Map Variable Value)
+eval input uni store =  case (parse parseHandler "Shell Statement" (input)) of
   Left err -> do
     putStrLn $ "No match" ++ show err
+    return store
   Right v  -> do
-    sh v uni
+    sh v uni store
 
 {-
 parseInit :: String -> IO (Config)

@@ -5,7 +5,7 @@ import Types
 import Control.Monad
 
 parseHandler :: Parser Statement
-parseHandler = try parseCommand <|> parseStVal <|> parseAssign
+parseHandler = try parseCommand <|> try parseAssign <|> parseStVal
 
 ---------- Parse Command
 parseCommand :: Parser Statement
