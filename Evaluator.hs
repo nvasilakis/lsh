@@ -92,5 +92,11 @@ sh (Val (String cmd)) uni = do
       (cod, out, err) <-  readProcessWithExitCode cmd [] ""
       pp $ out
 
+sh v@(Val _) uni = do pp $ show v
+
+-- TODO Mike, can you add a store here? I will take care of output later
+sh v@(Assign var val) uni = do pp $ show v
+
+
 pp :: String -> IO ()
 pp str = putStr str >> hFlush stdout
