@@ -78,37 +78,36 @@ lset :: [Value] -> Uni -> IO ()
 lset x _ = do
   putStrLn $ show x
 
-sh :: Statement -> Uni -> Map Variable Value -> IO (Map Variable Value)
-sh (Command cmd args) uni store = do
+sh :: Statement -> Uni  -> IO (Uni)
+sh (Command cmd args) uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
                    exec args uni
-                   return store
+                   return uni
     Nothing     -> do
       (cod, out, err) <- readProcessWithExitCode cmd (map show args) ""
       pp $ out
-      return store
+      return uni
 
-sh (Val (String cmd)) uni store = do
+sh (Val (String cmd)) uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
                    exec [] uni
-                   return store
+                   return uni
     Nothing     -> do
       (cod, out, err) <-  readProcessWithExitCode cmd [] ""
       pp $ out
-      return store
+      return uni
 
-sh v@(Val _) uni store = do 
+sh v@(Val _) uni = do
   pp $ show v
-  return store
+  return uni
 
--- TODO Mike, can you add a store here? I will take care of output later
-sh v@(Assign var val) uni store = do
-  pp $ show v
-  return (Map.insert var val store)
+sh v@(Assign var val) uni = do
+  return (Universe (history uni) (configuration uni)
+          (Map.insert var val $ variables uni))
 
 pp :: String -> IO ()
 pp str = putStr str >> hFlush stdout

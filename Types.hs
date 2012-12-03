@@ -8,6 +8,7 @@ type Variable = String
 type Args = [Value]
 type Hist = [String]
 type Config = Map.Map String String
+type Vars = Map.Map Variable Value
 {-
 TODO: We need to think about how to represent default values
 (Monad? Typeclass that has default? I think it is a monad because
@@ -18,7 +19,8 @@ can pattern match on maybe till then)
 -- Env would be better, but it is already semantically
 -- "taken" in the context of a shell (man env)!
 data Universe = Universe { history :: Hist
-                         , configuration :: Config }
+                         , configuration :: Config
+                         , variables :: Vars}
 -- we can definitely name it `Un` though~!
 type Uni = Universe
 

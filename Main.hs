@@ -25,34 +25,36 @@ testStore = Map.empty
 
 main :: IO ()
 main = do
+  let vars = Map.empty
   args <- getArgs
   conf <- lshInit
   hist <- lshHist -- TODO: this needs to be put lower for non interactive
   case length args of
-    0 -> repl (Universe hist conf) testStore
-    1 -> putStrLn $ simple args (Universe hist conf)
-    2 -> if ( args !! 0 ) `elem` arglist then 
-           do
-           eval (args !! 1) (Universe hist conf) testStore
+    0 -> repl (Universe hist conf vars)
+    1 -> putStrLn $ simple args (Universe hist conf vars)
+    2 -> if ( args !! 0 ) `elem` arglist then do
+           eval (args !! 1) (Universe hist conf vars)
            return ()
          else
            putStrLn $ "Unknown arg" ++ (show (args !! 0))
     otherwise -> putStrLn "Only 0-2 arguments!"
 
--- history needs to be applied in repl as evaluation does not append
-repl :: Uni -> Map Variable Value -> IO ()
-repl uni store = do
+repl :: Uni  -> IO ()
+repl uni = do
   putStr $ ps1 $ configuration uni
   hFlush stdout
   line <- getLine
-  newStore <- eval line uni store
-  putStrLn $ "Current Store: " ++ show newStore
-  repl (updateHistory line uni) newStore
+  newUni <- eval line uni
+  putStrLn $ "Current Store: " ++ (show $ variables newUni)
+  repl (updateHistory line newUni)
+--  where dbg :: Vars -> String
+--        dbg v = "whoot"
 --  args <- getArgs
 
 -- TODO: Append normally, and reverse when read
 updateHistory :: String -> Uni -> Uni
-updateHistory line uni = Universe ((history uni) ++ [line]) (configuration uni)
+updateHistory line uni = Universe ((history uni) ++ [line])
+                         (configuration uni) (variables uni)
 
 simple :: [String] -> Uni -> String -- eliminating new line
 simple args uni = case (args !! 0) of
@@ -65,13 +67,13 @@ ps1 conf = case (Map.lookup "prompt" conf) of
   Nothing -> "λ> "
 
 -- TODO: Should this be in Evaluator module?
-eval :: String -> Uni -> Map Variable Value -> IO (Map Variable Value)
-eval input uni store =  case (parse parseHandler "Shell Statement" (input)) of
+eval :: String -> Uni  -> IO (Uni)
+eval input uni =  case (parse parseHandler "Shell Statement" (input)) of
   Left err -> do
     putStrLn $ "No match" ++ show err
-    return store
+    return uni
   Right v  -> do
-    sh v uni store
+    sh v uni
 
 {-
 parseInit :: String -> IO (Config)
