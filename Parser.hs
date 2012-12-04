@@ -9,8 +9,8 @@ restricted = "!#$%| >()\n"
 
 parseComplex :: Parser Complex
 parseComplex = try parseHigher
---              <|> try parsePipe
---              <|> parseStatement
+              <|> try parsePipe
+              <|> parseStatement
 --            <|> parseSemi
 --
 
