@@ -64,9 +64,6 @@ parseCommand = do
   (String cmd)  <- parseString
   skipMany1 space
   args <- (many1 parseValue)
---  yol  <- (many space)
-  (skipMany space <|> eof)
---  oneOf "!#$| ?;\n"
   return $ Command cmd (args)
 
 ---------- Parse Value
@@ -79,6 +76,7 @@ parseValue :: Parser Value
 parseValue = do
   skipMany space
   v <-  parseNumber <|> parseQuoted <|> parseString
+  skipMany space
   return v
 
 parseNumber :: Parser Value
@@ -127,7 +125,7 @@ parseAssVar = do
 
 ---------- Parse Helpers -- used mostly for testing
 r :: String -> String -- Read helper for Complex statements
-r input = case parse parseCommand "Shell Statement" input of
+r input = case parse parseComplex "Shell Statement" input of
   Left err -> "No match: " ++ show err
   Right v  -> "Found value" ++ show v
 
