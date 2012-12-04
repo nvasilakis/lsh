@@ -5,26 +5,29 @@ import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
 
+restricted = "!#$%| >()\n"
+
 parseComplex :: Parser Complex
-parseComplex = -- try parsePipe
-                parseStatement
+parseComplex = try parseHigher
+--              <|> try parsePipe
+--              <|> parseStatement
 --            <|> parseSemi
---            <|> parseHigher
 --
 
 parsePipe :: Parser Complex
 parsePipe = do
-
+  skipMany space
   s1 <- parseStatement
-  skipMany1 space
+  skipMany space
   char '|'
-  skipMany1 space
+  skipMany space
   s2 <- parseStatement
   skipMany space
   return $ Pipe s1 s2
 
 parseHigher :: Parser Complex
 parseHigher = do
+  skipMany space
   hType <- parseHigherType
   skipMany1 space
   hFst <- parseParens
@@ -36,9 +39,7 @@ parseHigher = do
 parseParens :: Parser Complex
 parseParens = do
   char '('
-  skipMany space
   inner <- parseStatement
-  skipMany space
   char ')'
   return $ inner
 
@@ -85,7 +86,7 @@ parseNumber = liftM (Number . read) $ many1 digit
 parseString :: Parser Value
 parseString = do
   skipMany space
-  str <- many1 (noneOf "!#$%| >")
+  str <- many1 (noneOf restricted)
   return $ String str
 
 parseQuoted :: Parser Value
@@ -130,4 +131,4 @@ r input = case parse parseComplex "Shell Statement" input of
   Right v  -> "Found value" ++ show v
 
 symbol :: Parser Char
-symbol = oneOf "!#$%| >"
+symbol = oneOf restricted
