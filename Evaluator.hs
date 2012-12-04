@@ -78,8 +78,26 @@ lset :: [Value] -> Uni -> IO ()
 lset x _ = do
   putStrLn $ show x
 
-sh :: Statement -> Uni  -> IO (Uni)
-sh (Command cmd args) uni = do
+sh :: Complex -> Uni  -> IO (Uni)
+sh (Pipe c1 c2) uni = do
+  uni2 <- sh c1 uni -- We will need to print nothing here and push input fwd!
+  uniLast <- sh c2 uni2
+  return uniLast
+
+sh (Semi c1) uni = do
+  uni2 <- sh c1 uni
+  return uni2
+
+sh (Higher Map c1 c2) uni = undefined
+
+sh (Higher Fold c1 c2) uni = undefined
+
+sh (Higher Filter c1 c2) uni = undefined
+
+sh (Higher ZipWith c1 c2) uni = undefined
+
+
+sh (Statement ( Command cmd args)) uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
@@ -90,7 +108,7 @@ sh (Command cmd args) uni = do
       pp $ out
       return uni
 
-sh (Val (String cmd)) uni = do
+sh (Statement (Val (String cmd))) uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
@@ -101,11 +119,11 @@ sh (Val (String cmd)) uni = do
       pp $ out
       return uni
 
-sh v@(Val _) uni = do
+sh v@(Statement (Val _)) uni = do
   pp $ show v
   return uni
 
-sh v@(Assign var val) uni = do
+sh v@(Statement (Assign var val)) uni = do
   return (Universe (history uni) (configuration uni)
           (Map.insert var val $ variables uni))
 
