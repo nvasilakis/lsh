@@ -28,8 +28,14 @@ type Uni = Universe
 data Complex =
     Pipe Complex Complex            -- echo "a b" | grep 'a'
   | Semi Complex                    -- echo "a b"; -- echo "a b"; echo "c"
-  | Higher String Complex Complex   -- map/fold/filter/zipWith
+  | Higher Higher Complex Complex   -- map/fold/filter/zipWith
   | Statement Statement             -- echo "a b"
+
+data Higher =
+    Map
+  | Fold
+  | Filter
+  | ZipWith
 
 -- 4 basic structures
 -- TODO: add alias, if, while
@@ -47,7 +53,7 @@ data Value =
     deriving (Eq)
 
 showStatement :: Statement -> String
-showStatement (Command cmd args) =  "Running " ++ cmd ++ " | " ++ show args
+showStatement (Command cmd args) =  " " ++ cmd ++ " : " ++ show args
 showStatement (Val val) = show val
 showStatement (Assign var val) = (show var) ++ " = " ++ (show val)
 instance Show Statement where show = showStatement
@@ -56,6 +62,12 @@ showValue (String x) =  x
 showValue (Number x) = show x
 showValue (Quoted x) = show x
 instance Show Value where show = showValue
+
+showHigher (Map) = "map"
+showHigher (Fold) = "fold"
+showHigher (Filter) = "filter"
+showHigher (ZipWith) = "zipWith"
+instance Show Higher where show = showHigher
 
 showComplex :: Complex -> String
 showComplex (Pipe a b) = show a ++ " | " ++ show b

@@ -68,7 +68,7 @@ ps1 conf = case (Map.lookup "prompt" conf) of
 
 -- TODO: Should this be in Evaluator module?
 eval :: String -> Uni  -> IO (Uni)
-eval input uni =  case (parse parseHandler "Shell Statement" (input)) of
+eval input uni =  case (parse parseComplex "Shell Statement" (input)) of
   Left err -> do
     putStrLn $ "No match" ++ show err
     return uni

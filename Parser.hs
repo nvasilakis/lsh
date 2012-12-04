@@ -1,18 +1,72 @@
 module Parser where
 
 import Text.ParserCombinators.Parsec
+import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
 
-parseHandler :: Parser Statement
-parseHandler = try parseCommand <|> try parseAssign <|> parseStVal
+parseComplex :: Parser Complex
+parseComplex = -- try parsePipe
+                parseStatement
+--            <|> parseSemi
+--            <|> parseHigher
+--
+
+parsePipe :: Parser Complex
+parsePipe = do
+
+  s1 <- parseStatement
+  skipMany1 space
+  char '|'
+  skipMany1 space
+  s2 <- parseStatement
+  skipMany space
+  return $ Pipe s1 s2
+
+parseHigher :: Parser Complex
+parseHigher = do
+  hType <- parseHigherType
+  skipMany1 space
+  hFst <- parseParens
+  skipMany1 space
+  hSnd <- parseParens
+  return $ Higher hType hFst hSnd
+
+
+parseParens :: Parser Complex
+parseParens = do
+  char '('
+  skipMany space
+  inner <- parseStatement
+  skipMany space
+  char ')'
+  return $ inner
+
+-- TODO: Make sure you cannot use sth smarter to generate "Higher" (use of Ord?)
+parseHigherType :: Parser Higher
+parseHigherType = do
+  action <- choice $ map string ["map", "fold", "filter", "zipWith"]
+  case action of
+    ("map")     -> return $ Map
+    ("fold")    -> return $ Fold
+    ("filter")  -> return $ Filter
+    ("zipWith") -> return $ ZipWith
+
+parseStatement :: Parser Complex
+parseStatement = do
+  skipMany space
+  stat <- try parseCommand <|> try parseAssign <|> parseStVal
+  return $ Statement stat
 
 ---------- Parse Command
 parseCommand :: Parser Statement
 parseCommand = do
   (String cmd)  <- parseString
   skipMany1 space
-  args <- sepBy parseValue (skipMany1 space)
+  args <- (many1 parseValue)
+--  yol  <- (many space)
+  (skipMany space <|> eof)
+--  oneOf "!#$| ?;\n"
   return $ Command cmd (args)
 
 ---------- Parse Value
@@ -22,13 +76,17 @@ parseStVal = do
   return $ Val val
 
 parseValue :: Parser Value
-parseValue = parseNumber <|> parseQuoted <|> parseString
+parseValue = do
+  skipMany space
+  v <-  parseNumber <|> parseQuoted <|> parseString
+  return v
 
 parseNumber :: Parser Value
 parseNumber = liftM (Number . read) $ many1 digit
 
 parseString :: Parser Value
 parseString = do
+  skipMany space
   str <- many1 (noneOf "!#$%| >")
   return $ String str
 
@@ -68,8 +126,8 @@ parseAssVar = do
 
 
 ---------- Parse Helpers -- used mostly for testing
-readHelper :: String -> String -- Read helper for Complex statements
-readHelper input = case parse parseHandler "Shell Statement" input of
+r :: String -> String -- Read helper for Complex statements
+r input = case parse parseCommand "Shell Statement" input of
   Left err -> "No match: " ++ show err
   Right v  -> "Found value" ++ show v
 
