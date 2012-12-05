@@ -29,11 +29,12 @@ main = do
   args <- getArgs
   conf <- lshInit
   hist <- lshHist -- TODO: this needs to be put lower for non interactive
+  let u = (Universe hist conf vars [""])
   case length args of
-    0 -> repl (Universe hist conf vars)
-    1 -> putStrLn $ simple args (Universe hist conf vars)
+    0 -> repl u
+    1 -> putStrLn $ simple args u
     2 -> if ( args !! 0 ) `elem` arglist then do
-           eval (args !! 1) (Universe hist conf vars)
+           eval (args !! 1) u
            return ()
          else
            putStrLn $ "Unknown arg" ++ (show (args !! 0))
@@ -45,16 +46,15 @@ repl uni = do
   hFlush stdout
   line <- getLine
   newUni <- eval line uni
-  putStrLn $ "Current Store: " ++ (show $ variables newUni)
-  repl (updateHistory line newUni)
---  where dbg :: Vars -> String
---        dbg v = "whoot"
---  args <- getArgs
+  repl (appendToHistory line newUni)
 
 -- TODO: Append normally, and reverse when read
-updateHistory :: String -> Uni -> Uni
-updateHistory line uni = Universe ((history uni) ++ [line])
-                         (configuration uni) (variables uni)
+appendToHistory :: String -> Uni -> Uni
+appendToHistory line uni = Universe
+                         ((history uni) ++ [line])
+                         (configuration uni)
+                         (variables uni)
+                         (output uni)
 
 simple :: [String] -> Uni -> String -- eliminating new line
 simple args uni = case (args !! 0) of

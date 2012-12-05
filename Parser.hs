@@ -8,11 +8,17 @@ import Control.Monad
 restricted = "!#$%| >()\n"
 
 parseComplex :: Parser Complex
-parseComplex = try parseHigher
+parseComplex = try parseNoOp
+              <|> try parseHigher
               <|> try parsePipe
               <|> parseStatement
 --            <|> parseSemi
 --
+parseNoOp :: Parser Complex
+parseNoOp = do
+  skipMany space
+  eof
+  return Noop
 
 parsePipe :: Parser Complex
 parsePipe = do
@@ -34,7 +40,6 @@ parseHigher = do
   skipMany1 space
   hSnd <- parseParens
   return $ Higher hType hFst hSnd
-
 
 parseParens :: Parser Complex
 parseParens = do
