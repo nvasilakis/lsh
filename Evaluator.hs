@@ -94,6 +94,10 @@ sh (Semi c1) uni = do
   uni2 <- sh c1 uni
   return uni2
 
+sh (Noop) uni = do -- TODO: what if in middle of pipeline
+  pp Screen "\n"
+  return uni
+
 sh (Higher Map c1 c2) uni = undefined
 
 sh (Higher Fold c1 c2) uni = undefined

@@ -25,33 +25,6 @@ data Universe = Universe { history :: Hist
 -- we can definitely name it `Un` though~!
 type Uni = Universe
 
--- Specific functions for the record; I guess the only advantage
--- of this approach is to leverage benefits from the typesystem
-updateHistory :: Uni -> Hist -> Uni
-updateHistory u h = Universe
-                    (h)
-                    (configuration u)
-                    (variables u)
-                    (output u)
-updateConfiguration :: Uni -> Config -> Uni
-updateConfiguration u c = Universe
-                          (history u)
-                          (c)
-                          (variables u)
-                          (output u)
-updateVars :: Uni -> Vars -> Uni
-updateVars u v = Universe
-                   (history u)
-                   (configuration u)
-                   (v)
-                   (output u)
-
-updateOutput :: Uni -> [String] -> Uni
-updateOutput u o = Universe
-                   (history u)
-                   (configuration u)
-                   (variables u)
-                   (o)
 
 -- 4 examples of more elaborate scripting
 data Complex =
@@ -59,6 +32,7 @@ data Complex =
   | Semi Complex                    -- echo "a b"; -- echo "a b"; echo "c"
   | Higher Higher Complex Complex   -- map/fold/filter/zipWith
   | Statement Statement             -- echo "a b"
+  | Noop
 
 data Higher =
     Map
@@ -105,4 +79,33 @@ showComplex (Pipe a b) = show a ++ " | " ++ show b
 showComplex (Semi a) = show a ++ ";"
 showComplex (Higher s a b) = show s ++ " {" ++ show a ++ "} {" ++ show b ++ "}"
 showComplex (Statement a) = show a
+showComplex (Noop) = show "\n"
 instance Show Complex where show = showComplex
+
+-- Specific functions for the record; I guess the only advantage
+-- of this approach is to leverage benefits from the typesystem
+updateHistory :: Uni -> Hist -> Uni
+updateHistory u h = Universe
+                    (h)
+                    (configuration u)
+                    (variables u)
+                    (output u)
+updateConfiguration :: Uni -> Config -> Uni
+updateConfiguration u c = Universe
+                          (history u)
+                          (c)
+                          (variables u)
+                          (output u)
+updateVars :: Uni -> Vars -> Uni
+updateVars u v = Universe
+                   (history u)
+                   (configuration u)
+                   (v)
+                   (output u)
+
+updateOutput :: Uni -> [String] -> Uni
+updateOutput u o = Universe
+                   (history u)
+                   (configuration u)
+                   (variables u)
+                   (o)
