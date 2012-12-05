@@ -46,11 +46,7 @@ repl uni = do
   hFlush stdout
   line <- getLine
   newUni <- eval line uni
-  putStrLn $ "Current Store: " ++ (show $ variables newUni)
   repl (appendToHistory line newUni)
---  where dbg :: Vars -> String
---        dbg v = "whoot"
---  args <- getArgs
 
 -- TODO: Append normally, and reverse when read
 appendToHistory :: String -> Uni -> Uni
