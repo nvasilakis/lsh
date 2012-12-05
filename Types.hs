@@ -33,12 +33,14 @@ data Complex =
   | Higher Higher Complex Complex   -- map/fold/filter/zipWith
   | Statement Statement             -- echo "a b"
   | Noop
+  deriving (Eq)
 
 data Higher =
     Map
   | Fold
   | Filter
   | ZipWith
+  deriving (Eq)
 
 data Out =  Screen | Redirect
 
@@ -48,6 +50,7 @@ data Statement =
     Command String Args       -- echo "a b"
   | Val Value                 -- 3 or string or "quoted String"
   | Assign Variable Value     -- Assign x 3, Assign, x "quoted String"
+  deriving (Eq)
 
 -- literals
 -- TODO: add single-quoted string, boolean?
