@@ -12,7 +12,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 
 
-inExecTable :: [(String, [Value] -> Uni-> IO ())]
+inExecTable :: [(String, [Value] -> Out -> Uni-> IO (Uni))]
 inExecTable = [("cd"     , lcd)
               ,("echo"   ,lecho)
               ,("exit"   ,lexit)
@@ -23,61 +23,67 @@ inExecTable = [("cd"     , lcd)
               ,("history",lhist)
               ,("help"   ,lhelp)]
 
-lcd :: [Value] -> Uni -> IO ()
-lcd v _ = do
+lcd, lpwd, lhelp, lecho, lambda, lhist :: [Value] -> Out -> Uni -> IO (Uni)
+lset, lexit :: [Value] -> Out -> Uni -> IO (Uni)
+
+lcd v _ u = do
   setCurrentDirectory $ show $ v !! 0
+  return u
 
-lpwd :: [Value] -> Uni -> IO ()
-lpwd _ _ = do
+--lpwd :: [Value] -> Uni -> IO (Uni)
+lpwd _ o u = do
   x <- getCurrentDirectory
-  pp $ x ++ "\n"
+  y <- pp o $ x ++ "\n"
+  return $ resolve u y
 
-lhelp :: [Value] -> Uni -> IO ()
-lhelp _ _ = do
-  pp H.help
-
-lecho :: [Value] -> Uni -> IO ()
-lecho w _ = do
-  if ((String "-n") `elem` w) then do
-    pp $ (concat . filter (/="-n") . map show) w
+lhelp _ o u = do
+  x <- pp o H.help
+  return $ resolve u x
+-- TODO: Check for $ in the incoming string
+lecho w o u = do
+  x <- if ((String "-n") `elem` w) then do
+    pp o $ (concat . filter (/="-n") . map show) w
     else do
-    putStrLn  $ (concat . map show)  w
+    pp o (((concat . map show)  w ) ++ "\n")
+  return $ resolve u x
 
-lambda :: [Value] -> Uni -> IO ()
-lambda _ _ = do
-  pp H.lambda
+lambda v o u = do
+  x <- pp o H.lambda
+  return $ resolve u x
 
--- TODO: print history values
-lhist :: [Value] -> Uni -> IO ()
-lhist args uni = do
-  case (length args) of
-    0 -> pp $ expose (toInteger $ length (history uni) - 10) $ history uni
+-- TODO: Manipulate history (clear)
+lhist args o uni = do
+  x <- case (length args) of
+    0 -> pp o $ expose (toInteger $ length (history uni) - 10) $ history uni
     1 -> case (args !! 0) of
-      Number n -> pp $ expose n $ history uni
-      _ -> putStrLn "history: strings not supported"
+      Number n -> pp o $ expose n $ history uni
+      _ -> pp Screen "history: strings not supported\n"
            -- we need real state to utilize "-c"
-    _ -> putStrLn "Wrong number of arguments"
+    _ -> pp Screen "Wrong number of arguments\n"
+  return $ resolve uni x
 
   where expose :: Integer -> [String]-> String
         expose n xs= unlines $ drop (fromIntegral (n - 1))
                      $ zipWith (\ x y -> x ++ "\t" ++ y)
                      (map show [1..]) xs
-
--- TODO change history to non-local
-lexit :: [Value] -> Uni -> IO ()
-lexit _ uni = do
-  -- h <- getHomeDirectory
+-- TODO: Grab history to home dir or grab from resources
+lexit _ o u = do
   (tempName, tempHandle) <- openTempFile "." "temp"
-  hPutStr tempHandle $ unlines $ history uni
+  hPutStr tempHandle $ unlines $ history u
   hClose tempHandle
   renameFile tempName ".lsh_history"
   exitWith $ ExitSuccess
 
 -- TODO use Uni
-lset :: [Value] -> Uni -> IO ()
-lset x _ = do
-  putStrLn $ show x
+lset args o u =
+  case (length args) of
+    1 -> return $ updateConfiguration u $ Map.insert (show (args !! 0))
+         ("True") $ configuration u -- Add boolean to Value?
+    2 -> return $ updateConfiguration u $ Map.insert (show ( args !! 0))
+         (show (args !! 1)) $ configuration u
+    _ -> return u
 
+------------------------ Evaluation function
 sh :: Complex -> Uni  -> IO (Uni)
 sh (Pipe c1 c2) uni = do
   uni2 <- sh c1 uni -- We will need to print nothing here and push input fwd!
@@ -101,31 +107,43 @@ sh (Statement ( Command cmd args)) uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
-                   exec args uni
+                   exec args Screen uni
                    return uni
     Nothing     -> do
       (cod, out, err) <- readProcessWithExitCode cmd (map show args) ""
-      pp $ out
+      pp Screen $ out
       return uni
 
 sh (Statement (Val (String cmd))) uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
-                   exec [] uni
+                   exec [] Screen uni
                    return uni
     Nothing     -> do
       (cod, out, err) <-  readProcessWithExitCode cmd [] ""
-      pp $ out
+      pp Screen $ out
       return uni
 
 sh v@(Statement (Val _)) uni = do
-  pp $ show v
+  pp Screen $ show v -- TODO: needed?
   return uni
 
 sh v@(Statement (Assign var val)) uni = do
-  return (Universe (history uni) (configuration uni)
-          (Map.insert var val $ variables uni))
+  return $ updateVars uni (Map.insert var val $ variables uni)
 
-pp :: String -> IO ()
-pp str = putStr str >> hFlush stdout
+--------------- helpers
+
+pp :: Out -> String -> IO (Maybe String)
+pp o str = case o of
+  Screen -> do
+    putStr str
+    hFlush stdout
+    return (Nothing)
+  Redirect -> do
+    return (Just str)
+-- TODO: This should take a [String] as a second arg
+resolve :: Uni -> Maybe String -> Uni
+resolve u s = case s of
+  (Just y) -> (updateHistory u [y])
+  Nothing  -> u
