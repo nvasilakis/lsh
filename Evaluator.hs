@@ -95,7 +95,7 @@ sh (Semi c1) uni = do
   return uni2
 
 sh (Noop) uni = do -- TODO: what if in middle of pipeline
-  pp Screen "\n"
+  pp Screen ""
   return uni
 
 sh (Higher Map c1 c2) uni = undefined

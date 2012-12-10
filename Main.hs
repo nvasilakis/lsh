@@ -50,11 +50,14 @@ repl uni = do
 
 -- TODO: Append normally, and reverse when read
 appendToHistory :: String -> Uni -> Uni
-appendToHistory line uni = Universe
-                         ((history uni) ++ [line])
-                         (configuration uni)
-                         (variables uni)
-                         (output uni)
+appendToHistory line uni =
+  if (length line > 0) then
+    Universe
+    ((history uni) ++ [line])
+    (configuration uni)
+    (variables uni)
+    (output uni)
+    else uni
 
 simple :: [String] -> Uni -> String -- eliminating new line
 simple args uni = case (args !! 0) of
