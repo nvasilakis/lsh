@@ -1,10 +1,102 @@
 module Tests where
 
-import Test.HUnit
 import Types
 import Parser
-import Text.ParserCombinators.Parsec
 
+import Test.HUnit
+import Text.ParserCombinators.Parsec
+import Test.QuickCheck
+import Text.PrettyPrint.HughesPJ (Doc, (<+>),(<>))
+import qualified Text.PrettyPrint.HughesPJ as PP
+import Control.Monad
+
+--quickcheck start  
+
+--printing function for types
+
+class PP a where
+  pp :: a -> Doc
+  
+instance PP Value where
+  pp (Number x) = PP.integer x
+  pp (String x) = PP.text x
+  pp (Quoted x) = PP.doubleQuotes $ PP.text x
+  
+instance PP Statement where
+  pp (Command str args) = PP.text str <+> PP.hsep (map pp args)
+  pp (Val v) = pp v
+  pp (Assign var val) = PP.text var <> PP.equals <> pp val
+  
+instance PP Higher where
+  pp Map = PP.text "map"
+  pp Fold = PP.text "fold"
+  pp Filter = PP.text "filter"
+  pp ZipWith = PP.text "zipWith"
+  
+instance PP Complex where
+  pp (Pipe cpl1 cpl2) = pp cpl1 <+> PP.text "|" <+> pp cpl2
+  pp (Semi cpl) = pp cpl <> PP.semi
+  pp (Higher hfunc cpl1 cpl2) = pp hfunc 
+                                <+> 
+                                PP.lparen <> pp cpl1 <> PP.rparen
+                                <+> 
+                                PP.lparen <> pp cpl2 <> PP.rparen
+  pp (Statement st) = pp st
+  pp (Noop) = PP.text "\n"
+  
+display :: PP a => a -> String
+display = show . pp
+  
+--generate random statements
+
+instance Arbitrary Value where
+  arbitrary = oneof [elements [Number 3,Number 232],
+              --[liftM Number arbitrary,
+                     elements [String "ab",String "cd"],
+                     elements [Quoted "ef", Quoted "gh"]]
+  
+  shrink _ = []
+              
+instance Arbitrary Statement where
+  arbitrary = oneof [elements [Command "a" [String "ab"]],
+                     elements [Val (Number 1)]]
+                     --liftM Val arbitrary,
+                     --liftM (Assign "b") arbitrary]
+  
+  shrink _ = []
+
+instance Arbitrary Higher where
+  arbitrary = elements [Map,Fold,Filter,ZipWith]
+
+instance Arbitrary Complex where
+  arbitrary = oneof [astate,
+                     apipe,
+                     ahigher
+                     --liftM Semi arbitrary,
+                     ] 
+    where astate = liftM Statement arbitrary
+          apipe = oneof [liftM2 Pipe arbitrary astate,
+                         liftM2 Pipe arbitrary ahigher]
+          ahigher = oneof [liftM3 Higher arbitrary arbitrary astate,
+                           liftM3 Higher arbitrary arbitrary apipe]
+  
+  shrink _ = []
+
+--quickCheck properties
+
+checkComplexParser st = 
+  case (parse parseComplex "Shell Parser" (display st)) of
+    Left  _ -> False
+    Right a -> st == a
+  where types = st :: Complex
+
+main :: IO ()
+main = do
+  --verboseCheck checkComplexParser
+  quickCheck checkComplexParser
+  
+--quickcheck end  
+  
 runStaticTests :: IO Counts
 runStaticTests = runTestTT $ TestList testList
 

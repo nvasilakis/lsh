@@ -1,6 +1,7 @@
 module Parser where
 
 import Text.ParserCombinators.Parsec
+import Text.Parsec.Prim hiding (try)
 import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
@@ -8,11 +9,11 @@ import Control.Monad
 restricted = "!#$%| >()\n"
 
 parseComplex :: Parser Complex
-parseComplex = try parseNoOp
-              <|> try parseHigher
-              <|> try parsePipe
-              <|> parseStatement
---            <|> parseSemi
+parseComplex = try parseNoOp <|> 
+               try parsePipe <|> 
+               try parseHigher <|> 
+               try parseStatement
+               
 --
 parseNoOp :: Parser Complex
 parseNoOp = do
@@ -21,16 +22,16 @@ parseNoOp = do
   return Noop
 
 parsePipe :: Parser Complex
-parsePipe = do
-  skipMany space
-  s1 <- parseStatement
-  skipMany space
-  char '|'
-  skipMany space
-  s2 <- parseStatement
-  skipMany space
-  return $ Pipe s1 s2
-
+parsePipe = parserBind base rest
+  where base = try parseNoOp <|> try parseHigher <|> try parseStatement
+        rest x = next x <|> return x
+        next x = do
+          skipMany space
+          char '|'
+          y <- base
+          skipMany space
+          rest (Pipe x y)
+          
 parseHigher :: Parser Complex
 parseHigher = do
   skipMany space
@@ -39,12 +40,13 @@ parseHigher = do
   hFst <- parseParens
   skipMany1 space
   hSnd <- parseParens
+  skipMany space
   return $ Higher hType hFst hSnd
 
 parseParens :: Parser Complex
 parseParens = do
   char '('
-  inner <- parseStatement
+  inner <- parseComplex
   char ')'
   return $ inner
 
