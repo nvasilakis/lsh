@@ -51,11 +51,11 @@ parseParens = do
 -- TODO: Make sure you cannot use sth smarter to generate "Higher" (use of Ord?)
 parseHigherType :: Parser Higher
 parseHigherType = do
-  action <- choice $ map string ["map", "fold", "filter", "zipWith"]
+  action <- choice $ map (try . string)  ["map", "fold", "filter", "zipWith"]
   case action of
     ("map")     -> return $ Map
     ("fold")    -> return $ Fold
-    ("filter")  -> return $ Filter
+    ("filter")  -> return $ Filtr
     ("zipWith") -> return $ ZipWith
 
 parseStatement :: Parser Complex

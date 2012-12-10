@@ -38,7 +38,7 @@ data Complex =
 data Higher =
     Map
   | Fold
-  | Filter
+  | Filtr
   | ZipWith
   deriving (Eq)
 
@@ -71,10 +71,10 @@ showValue (Number x) = show x
 showValue (Quoted x) = show x
 instance Show Value where show = showValue
 
-showHigher (Map) = "map"
-showHigher (Fold) = "fold"
-showHigher (Filter) = "filter"
-showHigher (ZipWith) = "zipWith"
+showHigher (Map) = " map"
+showHigher (Fold) = " fold"
+showHigher (Filtr) = " filter"
+showHigher (ZipWith) = " zipWith"
 instance Show Higher where show = showHigher
 
 showComplex :: Complex -> String
