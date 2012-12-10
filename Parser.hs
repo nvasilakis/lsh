@@ -6,7 +6,7 @@ import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
 
-restricted = "!#$%| >()\n"
+restricted = "!#$%| >()\n\""
 
 parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
