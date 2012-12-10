@@ -51,34 +51,35 @@ display = show . pp
 
 instance Arbitrary Value where
   arbitrary = oneof [elements [Number 3,Number 232],
-              --[liftM Number arbitrary,
+                     -- keep number > 0
                      elements [String "ab",String "cd"],
-                     elements [Quoted "ef", Quoted "gh"]]
+                     elements [Quoted "ef d", Quoted "gh"]]
   
   shrink _ = []
               
 instance Arbitrary Statement where
-  arbitrary = oneof [elements [Command "a" [String "ab"]],
-                     elements [Val (Number 1)]]
-                     --liftM Val arbitrary,
-                     --liftM (Assign "b") arbitrary]
+  arbitrary = oneof [elements [Command "echo" [String "ab"]],
+                     elements [Val (Number 314),
+                               Val (String "ls")],
+                     liftM (Assign "b") arbitrary]
   
   shrink _ = []
 
 instance Arbitrary Higher where
   arbitrary = elements [Map,Fold,Filter,ZipWith]
 
+--if do not add frequency here some test case cannot finish generating
 instance Arbitrary Complex where
-  arbitrary = oneof [astate,
-                     apipe,
-                     ahigher
-                     --liftM Semi arbitrary,
-                     ] 
+  arbitrary = frequency [(4, astate),
+                         (2, apipe),
+                         (1, ahigher),
+                         (1, asemi)
+                        ] 
     where astate = liftM Statement arbitrary
+          asemi = liftM Semi arbitrary
           apipe = oneof [liftM2 Pipe arbitrary astate,
                          liftM2 Pipe arbitrary ahigher]
-          ahigher = oneof [liftM3 Higher arbitrary arbitrary astate,
-                           liftM3 Higher arbitrary arbitrary apipe]
+          ahigher = oneof [liftM3 Higher arbitrary arbitrary arbitrary]
   
   shrink _ = []
 
@@ -92,8 +93,8 @@ checkComplexParser st =
 
 main :: IO ()
 main = do
-  --verboseCheck checkComplexParser
-  quickCheck checkComplexParser
+  verboseCheck checkComplexParser
+  --quickCheck checkComplexParser
   
 --quickcheck end  
   
@@ -128,25 +129,25 @@ tStatementVal =
     "sv2" ~: succeed
     (parseStatementTest "21")
     (Statement (Val (Number (21)))),
---"sv3" ~: succeed (parseStatementTest "-1") (Statement (Val (Number (-1)))),
-    "sv4" ~: succeed
+    "sv3" ~: succeed
     (parseStatementTest "   1")
     (Statement (Val (Number (1)))),
-    "sv5" ~: succeed
+    "sv4" ~: succeed
     (parseStatementTest "   1    ")
     (Statement (Val (Number (1)))),
-    "sv6" ~: succeed
+    "sv5" ~: succeed
     (parseStatementTest "1    ")
     (Statement (Val (Number (1)))),
-    "sv7" ~: succeed
+    "sv6" ~: succeed
     (parseStatementTest "abc")
     (Statement (Val (String "abc"))),
-    --"sv8" ~: succeed (parseStatementTest "") (Statement (Val (String ""))),
-    "sv9" ~: succeed
+    "sv7" ~: succeed
     (parseStatementTest "\"abc\"")
     (Statement (Val (Quoted "abc"))),
---"sv10" ~: succeed (parseStatementTest "\"ab c\"") (Statement (Val (Quoted "ab c"))),
-    "sv11" ~: succeed
+    "sv8" ~: succeed 
+    (parseStatementTest "\"ab c\"") 
+    (Statement (Val (Quoted "ab c"))),
+    "sv9" ~: succeed
     (parseStatementTest "\"\"")
     (Statement (Val (Quoted ""))) ]
 
@@ -185,9 +186,10 @@ tStatementCommand =
     (Statement (Command "echo" [Number 3])),
     "sc5" ~: succeed
     (parseStatementTest "echo \"ab \"ab")
-    (Statement (Command "echo" [Quoted "ab ",String "ab"])),
-    "sc6" ~: succeed
-    (parseStatementTest "echo abcd\"")
-    (Statement (Command "echo" [String "abcd\""])) ]
-  --"sc7" ~: failure
-  --(parseStatementTest "echo \"ab") ]
+    (Statement (Command "echo" [Quoted "ab ",String "ab"]))]
+    --"sc6" ~: succeed
+    --(parseStatementTest "echo abcd\"")
+    --(Statement (Command "echo" [String "abcd\""])) ]
+    --"sc7" ~: failure
+    --(parseStatementTest "echo \"ab") ]
+    -- these two are future features

@@ -6,11 +6,11 @@ import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
 
-restricted = "!#$%| >()\n\""
+restricted = "!#$%| >()\n\";"
 
 parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
-               try parsePipe <|>
+               try parsePipeSemi <|>
                try parseHigher <|>
                try parseStatement
 
@@ -21,16 +21,23 @@ parseNoOp = do
   eof
   return Noop
 
-parsePipe :: Parser Complex
-parsePipe = parserBind base rest
-  where base = try parseNoOp <|> try parseHigher <|> try parseStatement
-        rest x = next x <|> return x
-        next x = do
+parsePipeSemi :: Parser Complex
+parsePipeSemi = parserBind base rest
+  where base = try parseNoOp <|>
+               try parseHigher <|>
+               try parseStatement
+        rest x = pipe x <|> semi x <|> return x
+        pipe x = do
           skipMany space
           char '|'
           y <- base
           skipMany space
-          rest (Pipe x y)
+          rest $ Pipe x y
+        semi x = do
+          skipMany space
+          char ';'
+          skipMany space
+          rest $ Semi x
 
 parseHigher :: Parser Complex
 parseHigher = do
@@ -42,7 +49,7 @@ parseHigher = do
   hSnd <- parseParens
   skipMany space
   return $ Higher hType hFst hSnd
-
+  
 parseParens :: Parser Complex
 parseParens = do
   char '('
@@ -63,7 +70,7 @@ parseHigherType = do
 parseStatement :: Parser Complex
 parseStatement = do
   skipMany space
-  stat <- try parseCommand <|> try parseAssign <|> parseStVal
+  stat <- try parseCommand <|> try parseAssign <|> try parseStVal
   return $ Statement stat
 
 ---------- Parse Command
@@ -83,7 +90,7 @@ parseStVal = do
 parseValue :: Parser Value
 parseValue = do
   skipMany space
-  v <-  parseNumber <|> parseQuoted <|> parseString
+  v <- try parseNumber <|> try parseQuoted <|> try parseString
   skipMany space
   return v
 
@@ -118,7 +125,7 @@ parseAssign :: Parser Statement
 parseAssign = do
   var <- parseAssVar
   char '='
-  val <- parseNumber <|> parseQuoted <|> parseString
+  val <- parseValue
   return $ Assign var val
 
 parseAssVar :: Parser String
