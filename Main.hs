@@ -49,6 +49,7 @@ repl uni = do
   repl (appendToHistory line newUni)
 
 -- TODO: Append normally, and reverse when read
+-- It also clears the previous output
 appendToHistory :: String -> Uni -> Uni
 appendToHistory line uni =
   if (length line > 0) then
@@ -56,7 +57,7 @@ appendToHistory line uni =
     ((history uni) ++ [line])
     (configuration uni)
     (variables uni)
-    (output uni)
+    ([""])
     else uni
 
 simple :: [String] -> Uni -> String -- eliminating new line
@@ -76,7 +77,7 @@ eval input uni =  case (parse parseComplex "Shell Statement" (input)) of
     putStrLn $ "No match" ++ show err
     return uni
   Right v  -> do
-    sh v uni
+    sh v Screen uni
 
 {-
 parseInit :: String -> IO (Config)
