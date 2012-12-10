@@ -9,11 +9,11 @@ import Control.Monad
 restricted = "!#$%| >()\n"
 
 parseComplex :: Parser Complex
-parseComplex = try parseNoOp <|> 
-               try parsePipe <|> 
-               try parseHigher <|> 
+parseComplex = try parseNoOp <|>
+               try parsePipe <|>
+               try parseHigher <|>
                try parseStatement
-               
+
 --
 parseNoOp :: Parser Complex
 parseNoOp = do
@@ -31,7 +31,7 @@ parsePipe = parserBind base rest
           y <- base
           skipMany space
           rest (Pipe x y)
-          
+
 parseHigher :: Parser Complex
 parseHigher = do
   skipMany space
@@ -57,7 +57,7 @@ parseHigherType = do
   case action of
     ("map")     -> return $ Map
     ("fold")    -> return $ Fold
-    ("filter")  -> return $ Filtr
+    ("filter")  -> return $ Filter
     ("zipWith") -> return $ ZipWith
 
 parseStatement :: Parser Complex

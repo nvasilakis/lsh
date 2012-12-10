@@ -38,7 +38,7 @@ data Complex =
 data Higher =
     Map
   | Fold
-  | Filtr
+  | Filter
   | ZipWith
   deriving (Eq)
 
@@ -73,7 +73,7 @@ instance Show Value where show = showValue
 
 showHigher (Map) = " map"
 showHigher (Fold) = " fold"
-showHigher (Filtr) = " filter"
+showHigher (Filter) = " filter"
 showHigher (ZipWith) = " zipWith"
 instance Show Higher where show = showHigher
 
