@@ -128,9 +128,6 @@ parseAssVar = do
          return (c:cs)
          <?> "Error parsing variable"
 
-
-
-
 ---------- Parse Helpers -- used mostly for testing
 r :: String -> String -- Read helper for Complex statements
 r input = case parse parseComplex "Shell Statement" input of

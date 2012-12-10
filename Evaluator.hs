@@ -84,56 +84,59 @@ lset args o u =
     _ -> return u
 
 ------------------------ Evaluation function
-sh :: Complex -> Uni  -> IO (Uni)
-sh (Pipe c1 c2) uni = do
-  uni2 <- sh c1 uni -- We will need to print nothing here and push input fwd!
-  uniLast <- sh c2 uni2
+sh :: Complex -> Out -> Uni  -> IO (Uni)
+sh (Pipe c1 c2) out uni = do
+  -- We will need to print nothing here and push input fwd!
+  uni2 <- sh c1 Redirect uni
+  uniLast <- sh c2 Screen uni2
   return uniLast
 
-sh (Semi c1) uni = do
-  uni2 <- sh c1 uni
-  return uni2
+sh (Semi c1) out uni = sh c1 Screen uni
 
-sh (Noop) uni = do -- TODO: what if in middle of pipeline
+sh (Noop) out uni = do -- TODO: what if in middle of pipeline
   pp Screen ""
   return uni
 
-sh (Higher Map c1 c2) uni = undefined
+sh (Higher Map c1 c2) out uni = undefined
 
-sh (Higher Fold c1 c2) uni = undefined
+sh (Higher Fold c1 c2) out uni = undefined
 
-sh (Higher Filter c1 c2) uni = undefined
+sh (Higher Filter c1 c2) out uni = undefined
 
-sh (Higher ZipWith c1 c2) uni = undefined
+sh (Higher ZipWith c1 c2) out uni = undefined
 
 
-sh (Statement ( Command cmd args)) uni = do
+sh (Statement (Command cmd args)) out uni = do
+  -- then lookup also in aliases -- this needs Maybe monad sequencing!
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
-                   exec args Screen uni
+                   exec args out uni
                    return uni
     Nothing     -> do
-      (cod, out, err) <- readProcessWithExitCode cmd (map show args) ""
-      pp Screen $ out
-      return uni
+--      putStrLn $ cmd ++ (unlines $ output uni)
+      (cod, stOut, stErr) <- readProcessWithExitCode cmd
+                             (map show args) $ unlines $ output uni
+      c <- pp out $ stOut
+      return $ resolve uni c
 
-sh (Statement (Val (String cmd))) uni = do
+sh (Statement (Val (String cmd))) out uni = do
   let action = lookup cmd inExecTable
   case action of
     (Just exec) -> do
-                   exec [] Screen uni
+                   exec [] out uni
                    return uni
     Nothing     -> do
-      (cod, out, err) <-  readProcessWithExitCode cmd [] ""
-      pp Screen $ out
-      return uni
+      (cod, stOut, stErr) <-  readProcessWithExitCode cmd
+                              [] $ unlines $ output uni
+      c <- pp out $ stOut
+      return $ resolve uni c
 
-sh v@(Statement (Val _)) uni = do
+sh v@(Statement (Val _)) out uni = do
   pp Screen $ show v -- TODO: needed?
   return uni
 
-sh v@(Statement (Assign var val)) uni = do
+sh v@(Statement (Assign var val)) out uni = do
   return $ updateVars uni (Map.insert var val $ variables uni)
 
 --------------- helpers
@@ -149,5 +152,5 @@ pp o str = case o of
 -- TODO: This should take a [String] as a second arg
 resolve :: Uni -> Maybe String -> Uni
 resolve u s = case s of
-  (Just y) -> (updateHistory u [y])
+  (Just y) -> (updateOutput u $ lines y)
   Nothing  -> u
