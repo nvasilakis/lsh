@@ -61,7 +61,7 @@ data Value =
     deriving (Eq)
 
 showStatement :: Statement -> String
-showStatement (Command cmd args) =  " " ++ cmd ++ " : " ++ show args
+showStatement (Command cmd args) = cmd ++ " : " ++ show args
 showStatement (Val val) = show val
 showStatement (Assign var val) = (show var) ++ " = " ++ (show val)
 instance Show Statement where show = showStatement
