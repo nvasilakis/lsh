@@ -1,5 +1,6 @@
 module Types where
 
+import Data.Map (Map)
 import qualified Data.Map as Map
 
 -- Syntax of Shell language
@@ -112,3 +113,5 @@ updateOutput u o = Universe
                    (configuration u)
                    (variables u)
                    (o)
+defaultUni :: Uni
+defaultUni = Universe [] Map.empty Map.empty []
