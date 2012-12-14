@@ -5,6 +5,7 @@ import Text.Parsec.Prim hiding (try)
 import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
+import qualified Data.Map as Map
 
 restricted = "!#$%| >()\n\";"
 
@@ -160,6 +161,22 @@ parseAssVar = do
          cs <- many (letter <|> digit <|> char '_')
          return (c:cs)
          <?> "Error parsing variable"
+
+---------- Parse Dollar Sign
+parseDollar :: Uni -> Parser String
+parseDollar uni = do
+  start <- many(noneOf "$")
+  char '$'
+  var <- many(noneOf "$")
+  case (Map.lookup var $ variables uni) of
+    (Just val) -> return $ start ++ show val
+    (Nothing) -> return start
+
+replaceDollar :: Uni -> String -> String
+replaceDollar uni input = 
+  case (parse (many $ parseDollar uni) "" input) of
+       Left err -> input
+       Right s  -> concat s
 
 ---------- Parse Helpers -- used mostly for testing
 r :: String -> String -- Read helper for Complex statements

@@ -8,6 +8,7 @@ import System.Exit
 import System.Directory
 import Control.Monad
 import Types
+import Parser
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -41,10 +42,11 @@ lhelp _ o u = do
   return $ resolve u x
 -- TODO: Check for $ in the incoming string
 lecho w o u = do
-  x <- if ((String "-n") `elem` w) then do
-    pp o $ (concat . filter (/="-n") . map show) w
+  let nw = map (replaceVariable u) w
+  x <- if ((String "-n") `elem` nw) then do
+    pp o $ (concat . filter (/="-n") . map show) nw
     else do
-    pp o (((concat . map show)  w ) ++ "\n")
+    pp o (((concat . map show)  nw ) ++ "\n")
   return $ resolve u x
 
 lambda v o u = do
@@ -154,3 +156,8 @@ resolve :: Uni -> Maybe String -> Uni
 resolve u s = case s of
   (Just y) -> (updateOutput u $ lines y)
   Nothing  -> u
+
+replaceVariable :: Uni -> Value -> Value
+replaceVariable _   (Number a) = Number a
+replaceVariable uni (String a) = String $ replaceDollar uni a
+replaceVariable uni (Quoted a) = Quoted $ replaceDollar uni a
