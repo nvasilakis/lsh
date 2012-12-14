@@ -8,9 +8,40 @@ import Control.Monad
 
 restricted = "!#$%| >()\n\";"
 
+parseComplete :: Parser Complete
+parseComplete = parserBind base rest 
+  where base = try parseCcomplex
+        rest x = ssep x <|> return x
+        ssep x = do
+          skipMany space
+          char ';'
+          c <- try (parseSepSemi x) <|> 
+               try (parseSep x)
+          rest c
+
+parseCcomplex :: Parser Complete
+parseCcomplex = do
+  skipMany space
+  c <- parseComplex
+  skipMany space
+  return $ Complex c
+  
+parseSepSemi :: Complete -> Parser Complete
+parseSepSemi c1 = do
+  skipMany space
+  string ""
+  skipMany space
+  eof
+  return $ Semi c1
+  
+parseSep :: Complete -> Parser Complete
+parseSep c1 = do
+  c2 <- parseCcomplex
+  return $ Ssep c1 c2
+
 parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
-               try parsePipeSemi <|>
+               try parsePipe <|>
                try parseHigher <|>
                try parseStatement
 
@@ -21,23 +52,18 @@ parseNoOp = do
   eof
   return Noop
 
-parsePipeSemi :: Parser Complex
-parsePipeSemi = parserBind base rest
+parsePipe :: Parser Complex
+parsePipe = parserBind base rest
   where base = try parseNoOp <|>
                try parseHigher <|>
                try parseStatement
-        rest x = pipe x <|> semi x <|> return x
+        rest x = pipe x <|> return x
         pipe x = do
           skipMany space
           char '|'
           y <- base
           skipMany space
           rest $ Pipe x y
-        semi x = do
-          skipMany space
-          char ';'
-          skipMany space
-          rest $ Semi x
 
 parseHigher :: Parser Complex
 parseHigher = do

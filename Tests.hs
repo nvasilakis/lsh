@@ -10,7 +10,7 @@ import Text.PrettyPrint.HughesPJ (Doc, (<+>),(<>))
 import qualified Text.PrettyPrint.HughesPJ as PP
 import Control.Monad
 
---quickcheck start  
+--quickcheck start
 
 --printing function for types
 
@@ -35,7 +35,6 @@ instance PP Higher where
   
 instance PP Complex where
   pp (Pipe cpl1 cpl2) = pp cpl1 <+> PP.text "|" <+> pp cpl2
-  pp (Semi cpl) = pp cpl <> PP.semi
   pp (Higher hfunc cpl1 cpl2) = pp hfunc 
                                 <+> 
                                 PP.lparen <> pp cpl1 <> PP.rparen
@@ -43,6 +42,11 @@ instance PP Complex where
                                 PP.lparen <> pp cpl2 <> PP.rparen
   pp (Statement st) = pp st
   pp (Noop) = PP.text "\n"
+  
+instance PP Complete where
+  pp (Complex x) = pp x
+  pp (Semi c) = pp c <> PP.semi
+  pp (Ssep c1 c2) = pp c1 <+> PP.semi <+> pp c2
   
 display :: PP a => a -> String
 display = show . pp
@@ -72,29 +76,34 @@ instance Arbitrary Higher where
 instance Arbitrary Complex where
   arbitrary = frequency [(4, astate),
                          (2, apipe),
-                         (1, ahigher),
-                         (1, asemi)
+                         (1, ahigher)
                         ] 
     where astate = liftM Statement arbitrary
-          asemi = liftM Semi arbitrary
           apipe = oneof [liftM2 Pipe arbitrary astate,
                          liftM2 Pipe arbitrary ahigher]
           ahigher = oneof [liftM3 Higher arbitrary arbitrary arbitrary]
   
   shrink _ = []
+  
+instance Arbitrary Complete where
+  arbitrary = oneof [acomplex,
+                     liftM2 Ssep arbitrary acomplex]
+    where acomplex = liftM Complex arbitrary
+  shrink _ = []
 
 --quickCheck properties
 
-checkComplexParser st = 
-  case (parse parseComplex "Shell Parser" (display st)) of
+checkCompleteParser st = 
+  case (parse parseComplete "Shell Parser" (display st)) of
     Left  _ -> False
     Right a -> st == a
-  where types = st :: Complex
+  where types = st :: Complete
 
 main :: IO ()
 main = do
-  verboseCheck checkComplexParser
-  --quickCheck checkComplexParser
+  runStaticTests
+  --verboseCheck checkComplexParser
+  quickCheck checkCompleteParser
   
 --quickcheck end  
   

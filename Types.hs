@@ -25,11 +25,16 @@ data Universe = Universe { history :: Hist
 -- we can definitely name it `Un` though~!
 type Uni = Universe
 
+data Complete =
+  Complex Complex                   -- complex method types
+  | Semi Complete                   -- echo "a b"; method ends in semi
+  | Ssep Complete Complete          -- echo "a b"; echo "c" seperated by semi
+  deriving (Eq)
 
 -- 4 examples of more elaborate scripting
 data Complex =
     Pipe Complex Complex            -- echo "a b" | grep 'a'
-  | Semi Complex                    -- echo "a b"; -- echo "a b"; echo "c"
+--  | Semi Complex                    -- echo "a b"; -- echo "a b"; echo "c"
   | Higher Higher Complex Complex   -- map/fold/filter/zipWith
   | Statement Statement             -- echo "a b"
   | Noop
@@ -79,11 +84,16 @@ instance Show Higher where show = showHigher
 
 showComplex :: Complex -> String
 showComplex (Pipe a b) = show a ++ " | " ++ show b
-showComplex (Semi a) = show a ++ ";"
 showComplex (Higher s a b) = show s ++ " {" ++ show a ++ "} {" ++ show b ++ "}"
 showComplex (Statement a) = show a
 showComplex (Noop) = show "\n"
 instance Show Complex where show = showComplex
+                            
+showComplete :: Complete -> String
+showComplete (Complex c) = show c
+showComplete (Semi a) = show a ++ ";"
+showComplete (Ssep a b) = show a ++ " ; " ++ show b
+instance Show Complete where show = showComplete
 
 -- Specific functions for the record; I guess the only advantage
 -- of this approach is to leverage benefits from the typesystem

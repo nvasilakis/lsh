@@ -91,7 +91,7 @@ sh (Pipe c1 c2) out uni = do
   uniLast <- sh c2 Screen uni2
   return uniLast
 
-sh (Semi c1) out uni = sh c1 Screen uni
+--sh (Semi c1) out uni = sh c1 Screen uni
 
 sh (Noop) out uni = do -- TODO: what if in middle of pipeline
   pp Screen ""
