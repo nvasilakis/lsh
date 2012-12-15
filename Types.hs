@@ -2,6 +2,8 @@ module Types where
 
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Text.PrettyPrint.HughesPJ (Doc, (<+>),(<>))
+import qualified Text.PrettyPrint.HughesPJ as PP
 
 -- Syntax of Shell language
 
@@ -10,6 +12,7 @@ type Args = [Value]
 type Hist = [String]
 type Config = Map.Map String String
 type Vars = Map.Map Variable Value
+type Alias = Map.Map Variable Value
 {-
 TODO: We need to think about how to represent default values
 (Monad? Typeclass that has default? I think it is a monad because
@@ -23,7 +26,8 @@ data Universe = Universe { history :: Hist
                          , configuration :: Config
                          , variables :: Vars
                          , output :: [String]
-                         , exitCode :: Int}
+                         , exitCode :: Int
+                         , alias :: Alias }
 -- we can definitely name it `Un` though~!
 type Uni = Universe
 
@@ -106,6 +110,7 @@ updateHistory u h = Universe
                     (variables u)
                     (output u)
                     (exitCode u)
+                    (alias u)
 
 -- updateConfiguration uc c = uc {configuration = c }
 updateConfiguration :: Uni -> Config -> Uni
@@ -115,6 +120,7 @@ updateConfiguration u c = Universe
                           (variables u)
                           (output u)
                           (exitCode u)
+                          (alias u)
 
 updateVars :: Uni -> Vars -> Uni
 updateVars u v = Universe
@@ -123,6 +129,7 @@ updateVars u v = Universe
                    (v)
                    (output u)
                    (exitCode u)
+                   (alias u)
 
 updateOutput :: Uni -> [String] -> Uni
 updateOutput u o = Universe
@@ -131,6 +138,7 @@ updateOutput u o = Universe
                    (variables u)
                    (o)
                    (exitCode u)
+                   (alias u)
 
 updateExitCode :: Uni -> Int -> Uni
 updateExitCode u e = Universe
@@ -139,5 +147,54 @@ updateExitCode u e = Universe
                    (variables u)
                    (output u)
                    (e)
+                   (alias u)
+                   
+updateAlias :: Uni -> Alias -> Uni
+updateAlias u a = Universe
+                   (history u)
+                   (configuration u)
+                   (variables u)
+                   (output u)
+                   (exitCode u)
+                   (a)
+                   
 defaultUni :: Uni
-defaultUni = Universe [] Map.empty Map.empty [] 0
+defaultUni = Universe [] Map.empty Map.empty [] 0 Map.empty
+
+-- for testing and alias
+class PP a where
+  pprint :: a -> Doc
+  
+instance PP Value where
+  pprint (Number x) = PP.integer x
+  pprint (String x) = PP.text x
+  pprint (Quoted x) = PP.doubleQuotes $ PP.text x
+  
+instance PP Statement where
+  pprint (Command str args) = PP.text str <+> PP.hsep (map pprint args)
+  pprint (Val v) = pprint v
+  pprint (Assign var val) = PP.text var <> PP.equals <> pprint val
+  
+instance PP Higher where
+  pprint Map = PP.text "map"
+  pprint Fold = PP.text "fold"
+  pprint Filter = PP.text "filter"
+  pprint ZipWith = PP.text "zipWith"
+  
+instance PP Complex where
+  pprint (Pipe cpl1 cpl2) = pprint cpl1 <+> PP.text "|" <+> pprint cpl2
+  pprint (Higher hfunc cpl1 cpl2) = pprint hfunc 
+                                <+> 
+                                PP.lparen <> pprint cpl1 <> PP.rparen
+                                <+> 
+                                PP.lparen <> pprint cpl2 <> PP.rparen
+  pprint (Statement st) = pprint st
+  pprint (Noop) = PP.text "\n"
+  
+instance PP Complete where
+  pprint (Complex x) = pprint x
+  pprint (Semi c) = pprint c <> PP.semi
+  pprint (Ssep c1 c2) = pprint c1 <+> PP.semi <+> pprint c2
+  
+display :: PP a => a -> String
+display = show . pprint
