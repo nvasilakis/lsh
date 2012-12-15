@@ -5,8 +5,40 @@ import Text.Parsec.Prim hiding (try)
 import qualified Text.ParserCombinators.Parsec.Token as PT
 import Types
 import Control.Monad
+import qualified Data.Map as Map
 
-restricted = "!#$%| >()\n\""
+restricted = "!#$%| >()\n\";"
+
+parseComplete :: Parser Complete
+parseComplete = parserBind base rest 
+  where base = try parseCcomplex
+        rest x = ssep x <|> return x
+        ssep x = do
+          skipMany space
+          char ';'
+          c <- try (parseSepSemi x) <|> 
+               try (parseSep x)
+          rest c
+
+parseCcomplex :: Parser Complete
+parseCcomplex = do
+  skipMany space
+  c <- parseComplex
+  skipMany space
+  return $ Complex c
+  
+parseSepSemi :: Complete -> Parser Complete
+parseSepSemi c1 = do
+  skipMany space
+  string ""
+  skipMany space
+  eof
+  return $ Semi c1
+  
+parseSep :: Complete -> Parser Complete
+parseSep c1 = do
+  c2 <- parseCcomplex
+  return $ Ssep c1 c2
 
 parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
@@ -23,14 +55,16 @@ parseNoOp = do
 
 parsePipe :: Parser Complex
 parsePipe = parserBind base rest
-  where base = try parseNoOp <|> try parseHigher <|> try parseStatement
-        rest x = next x <|> return x
-        next x = do
+  where base = try parseNoOp <|>
+               try parseHigher <|>
+               try parseStatement
+        rest x = pipe x <|> return x
+        pipe x = do
           skipMany space
           char '|'
           y <- base
           skipMany space
-          rest (Pipe x y)
+          rest $ Pipe x y
 
 parseHigher :: Parser Complex
 parseHigher = do
@@ -42,7 +76,7 @@ parseHigher = do
   hSnd <- parseParens
   skipMany space
   return $ Higher hType hFst hSnd
-
+  
 parseParens :: Parser Complex
 parseParens = do
   char '('
@@ -63,7 +97,7 @@ parseHigherType = do
 parseStatement :: Parser Complex
 parseStatement = do
   skipMany space
-  stat <- try parseCommand <|> try parseAssign <|> parseStVal
+  stat <- try parseCommand <|> try parseAssign <|> try parseStVal
   return $ Statement stat
 
 ---------- Parse Command
@@ -83,7 +117,7 @@ parseStVal = do
 parseValue :: Parser Value
 parseValue = do
   skipMany space
-  v <-  parseNumber <|> parseQuoted <|> parseString
+  v <- try parseNumber <|> try parseQuoted <|> try parseString
   skipMany space
   return v
 
@@ -118,7 +152,7 @@ parseAssign :: Parser Statement
 parseAssign = do
   var <- parseAssVar
   char '='
-  val <- parseNumber <|> parseQuoted <|> parseString
+  val <- parseValue
   return $ Assign var val
 
 parseAssVar :: Parser String
@@ -127,6 +161,22 @@ parseAssVar = do
          cs <- many (letter <|> digit <|> char '_')
          return (c:cs)
          <?> "Error parsing variable"
+
+---------- Parse Dollar Sign
+parseDollar :: Uni -> Parser String
+parseDollar uni = do
+  start <- many(noneOf "$")
+  char '$'
+  var <- many(noneOf "$")
+  case (Map.lookup var $ variables uni) of
+    (Just val) -> return $ start ++ show val
+    (Nothing) -> return start
+
+replaceDollar :: Uni -> String -> String
+replaceDollar uni input = 
+  case (parse (many $ parseDollar uni) "" input) of
+       Left err -> input
+       Right s  -> concat s
 
 ---------- Parse Helpers -- used mostly for testing
 r :: String -> String -- Read helper for Complex statements
