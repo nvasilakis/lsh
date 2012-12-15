@@ -26,10 +26,11 @@ testStore = Map.empty
 main :: IO ()
 main = do
   let vars = Map.empty
+      alias = Map.empty
   args <- getArgs
   conf <- lshInit
   hist <- lshHist -- TODO: this needs to be put lower for non interactive
-  let u = (Universe hist conf vars [""] 0)
+  let u = (Universe hist conf vars [""] 0 alias)
   case length args of
     0 -> repl u
     1 -> putStrLn $ simple args u
@@ -59,6 +60,7 @@ appendToHistory line uni =
     (variables uni)
     ([""])
     0
+    (alias uni)
     else uni
 
 simple :: [String] -> Uni -> String -- eliminating new line
@@ -70,15 +72,6 @@ ps1 :: Config -> String
 ps1 conf = case (Map.lookup "prompt" conf) of
   Just x -> x
   Nothing -> "λ> "
-
--- TODO: Should this be in Evaluator module?
-eval :: String -> Uni  -> IO (Uni)
-eval input uni =  case (parse parseComplex "Shell Statement" (input)) of
-  Left err -> do
-    putStrLn $ "No match" ++ show err
-    return uni
-  Right v  -> do
-    sh v Screen uni
 
 {-
 parseInit :: String -> IO (Config)
