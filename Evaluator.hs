@@ -97,25 +97,32 @@ sh (Noop) out uni = do -- TODO: what if in middle of pipeline
   pp Screen ""
   return uni
 
-sh (Higher Map c1 c2) out uni = undefined
+sh (Higher Map c1 c2) out uni = do
+  uni2 <- sh c2 Redirect uni
+  results <- lmap c1 $ output uni2
+  return $ updateOutput uni2 results
+  where lmap :: Complex -> [String] -> IO ([String])
+        lmap c (x:xs) = do
+          u <- sh c Redirect $ updateOutput defaultUni [x]
+          liftM2 (:) (return (x)) (lmap c xs)
+        lmap _ [] = return ([])
 
 sh (Higher Fold c1 c2) out uni = undefined
 
 sh (Higher Filter c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
-  results <- filtr c2 $ output uni2
+  results <- lfilter c1 $ output uni2
 --  putStrLn $ unlines results
   return $ updateOutput uni2 results
-  where filtr :: Complex -> [String] -> IO ([String])
-        filtr c2 (x:xs) = do  -- create a fake uni
-          u <- sh c2 Screen $ updateOutput defaultUni [x]
+  where lfilter :: Complex -> [String] -> IO ([String])
+        lfilter c (x:xs) = do  -- create a fake uni
+          u <- sh c Redirect $ updateOutput defaultUni [x]
           case (exitCode u) of
-            0 -> liftM2 (:) (return (x)) (filtr c2 xs)
-            _ -> filtr c2 xs
-        filtr _ [] = return ([])
+            0 -> liftM2 (:) (return (x)) (lfilter c xs)
+            _ -> lfilter c xs
+        lfilter _ [] = return ([])
 
 sh (Higher ZipWith c1 c2) out uni = undefined
-
 
 sh (Statement (Command cmd args)) out uni = do
   -- then lookup also in aliases -- this needs Maybe monad sequencing!
