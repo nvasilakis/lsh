@@ -29,7 +29,7 @@ main = do
   args <- getArgs
   conf <- lshInit
   hist <- lshHist -- TODO: this needs to be put lower for non interactive
-  let u = (Universe hist conf vars [""])
+  let u = (Universe hist conf vars [""] 0)
   case length args of
     0 -> repl u
     1 -> putStrLn $ simple args u
@@ -58,6 +58,7 @@ appendToHistory line uni =
     (configuration uni)
     (variables uni)
     ([""])
+    0
     else uni
 
 simple :: [String] -> Uni -> String -- eliminating new line

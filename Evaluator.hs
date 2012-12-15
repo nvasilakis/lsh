@@ -104,14 +104,14 @@ sh (Higher Fold c1 c2) out uni = undefined
 sh (Higher Filter c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- filtr c2 $ output uni2
+--  putStrLn $ unlines results
   return $ updateOutput uni2 results
   where filtr :: Complex -> [String] -> IO ([String])
-        filtr c2 (x:xs) = undefined {- do  -- create a fake uni
-          u = sh c2 Redirect $ updateOutput defaultUni s
+        filtr c2 (x:xs) = do  -- create a fake uni
+          u <- sh c2 Screen $ updateOutput defaultUni [x]
           case (exitCode u) of
-            0 -> liftM2 (:) (return (x)) (filter c2 xs)
-            _ -> filter c2 xs
--}
+            0 -> liftM2 (:) (return (x)) (filtr c2 xs)
+            _ -> filtr c2 xs
         filtr _ [] = return ([])
 
 sh (Higher ZipWith c1 c2) out uni = undefined
@@ -128,9 +128,12 @@ sh (Statement (Command cmd args)) out uni = do
 --      putStrLn $ cmd ++ (unlines $ output uni)
       (cod, stOut, stErr) <- readProcessWithExitCode cmd
                              (map show args) $ unlines $ output uni
-      putStrLn $ cmd ++ " | " ++ ( show cod )
+--      putStrLn $ cmd ++ " | " ++ ( show cod )
+      let e = case cod of
+            ExitSuccess -> 0
+            ExitFailure z -> z
       c <- pp out $ stOut
-      return $ resolve uni c
+      return $ resolve (updateExitCode uni e) c
 
 sh (Statement (Val (String cmd))) out uni = do
   let action = lookup cmd inExecTable
@@ -141,8 +144,11 @@ sh (Statement (Val (String cmd))) out uni = do
     Nothing     -> do
       (cod, stOut, stErr) <-  readProcessWithExitCode cmd
                               [] $ unlines $ output uni
+      let e = case cod of
+            ExitSuccess -> 0
+            ExitFailure z -> z
       c <- pp out $ stOut
-      return $ resolve uni c
+      return $ resolve (updateExitCode uni e) c
 
 sh v@(Statement (Val _)) out uni = do
   pp Screen $ show v -- TODO: needed?

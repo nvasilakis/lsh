@@ -22,7 +22,8 @@ can pattern match on maybe till then)
 data Universe = Universe { history :: Hist
                          , configuration :: Config
                          , variables :: Vars
-                         , output :: [String]}
+                         , output :: [String]
+                         , exitCode :: Int}
 -- we can definitely name it `Un` though~!
 type Uni = Universe
 
@@ -94,18 +95,24 @@ updateHistory u h = Universe
                     (configuration u)
                     (variables u)
                     (output u)
+                    (exitCode u)
+
+-- updateConfiguration uc c = uc {configuration = c }
 updateConfiguration :: Uni -> Config -> Uni
 updateConfiguration u c = Universe
                           (history u)
                           (c)
                           (variables u)
                           (output u)
+                          (exitCode u)
+
 updateVars :: Uni -> Vars -> Uni
 updateVars u v = Universe
                    (history u)
                    (configuration u)
                    (v)
                    (output u)
+                   (exitCode u)
 
 updateOutput :: Uni -> [String] -> Uni
 updateOutput u o = Universe
@@ -113,5 +120,14 @@ updateOutput u o = Universe
                    (configuration u)
                    (variables u)
                    (o)
+                   (exitCode u)
+
+updateExitCode :: Uni -> Int -> Uni
+updateExitCode u e = Universe
+                   (history u)
+                   (configuration u)
+                   (variables u)
+                   (output u)
+                   (e)
 defaultUni :: Uni
-defaultUni = Universe [] Map.empty Map.empty []
+defaultUni = Universe [] Map.empty Map.empty [] 0
