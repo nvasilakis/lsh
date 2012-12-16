@@ -12,7 +12,7 @@ type Args = [Value]
 type Hist = [String]
 type Config = Map.Map String String
 type Vars = Map.Map Variable Value
-type Alias = Map.Map Variable Value
+type AliasStore = Map.Map Variable Value
 {-
 TODO: We need to think about how to represent default values
 (Monad? Typeclass that has default? I think it is a monad because
@@ -27,7 +27,7 @@ data Universe = Universe { history :: Hist
                          , variables :: Vars
                          , output :: [String]
                          , exitCode :: Int
-                         , alias :: Alias }
+                         , alias :: AliasStore }
 -- we can definitely name it `Un` though~!
 type Uni = Universe
 
@@ -43,6 +43,7 @@ data Complex =
 --  | Semi Complex                    -- echo "a b"; -- echo "a b"; echo "c"
   | Higher Higher Complex Complex   -- map/fold/filter/zipWith
   | Statement Statement             -- echo "a b"
+  | Alias Args
   | Noop
   deriving (Eq)
 
@@ -93,6 +94,7 @@ showComplex (Pipe a b) = show a ++ " | " ++ show b
 showComplex (Higher s a b) = show s ++ " {" ++ show a ++ "} {" ++ show b ++ "}"
 showComplex (Statement a) = show a
 showComplex (Noop) = show "\n"
+showComplex (Alias a) = "alias " ++ show a
 instance Show Complex where show = showComplex
                             
 showComplete :: Complete -> String
@@ -149,7 +151,7 @@ updateExitCode u e = Universe
                    (e)
                    (alias u)
                    
-updateAlias :: Uni -> Alias -> Uni
+updateAlias :: Uni -> AliasStore -> Uni
 updateAlias u a = Universe
                    (history u)
                    (configuration u)
@@ -190,11 +192,12 @@ instance PP Complex where
                                 PP.lparen <> pprint cpl2 <> PP.rparen
   pprint (Statement st) = pprint st
   pprint (Noop) = PP.text "\n"
+  pprint (Alias args) = PP.text "alias" <+> PP.hsep (map pprint args)
   
 instance PP Complete where
   pprint (Complex x) = pprint x
   pprint (Semi c) = pprint c <> PP.semi
   pprint (Ssep c1 c2) = pprint c1 <+> PP.semi <+> pprint c2
-  
+
 display :: PP a => a -> String
 display = show . pprint
