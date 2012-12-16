@@ -11,10 +11,11 @@ import Types
 import Parser
 import Data.Map (Map)
 import qualified Data.Map as Map
-
+import Data.List
+import Text.ParserCombinators.Parsec
 
 inExecTable :: [(String, [Value] -> Out -> Uni-> IO (Uni))]
-inExecTable = [("cd"     , lcd)
+inExecTable = [("cd"     ,lcd)
               ,("echo"   ,lecho)
               ,("exit"   ,lexit)
               ,("quit"   ,lexit)
@@ -22,10 +23,11 @@ inExecTable = [("cd"     , lcd)
               ,("pwd"    ,lpwd)
               ,("lambda" ,lambda)
               ,("history",lhist)
-              ,("help"   ,lhelp)]
+              ,("help"   ,lhelp)
+              ,("alias"  ,lalias)]
 
 lcd, lpwd, lhelp, lecho, lambda, lhist :: [Value] -> Out -> Uni -> IO (Uni)
-lset, lexit :: [Value] -> Out -> Uni -> IO (Uni)
+lset, lexit, lalias :: [Value] -> Out -> Uni -> IO (Uni)
 
 lcd v _ u = do
   setCurrentDirectory $ show $ v !! 0
@@ -68,6 +70,7 @@ lhist args o uni = do
         expose n xs= unlines $ drop (fromIntegral (n - 1))
                      $ zipWith (\ x y -> x ++ "\t" ++ y)
                      (map show [1..]) xs
+
 -- TODO: Grab history to home dir or grab from resources
 lexit _ o u = do
   (tempName, tempHandle) <- openTempFile "." "temp"
@@ -84,6 +87,22 @@ lset args o u =
     2 -> return $ updateConfiguration u $ Map.insert (show ( args !! 0))
          (show (args !! 1)) $ configuration u
     _ -> return u
+
+-- TODO this is just an simple alias implementation
+lalias args _ u =
+  case (length args) of
+    0 -> do
+         putStrLn $ show $ alias u
+         return u -- TODO print all the alias
+    _ -> do
+         let input = intercalate " " (map show args)
+         case (parse (many parseAliasArgs) "" input) of
+           Left err -> return u
+           Right v  -> return $ insertList v u 
+                         where insertList [] uni = uni
+                               insertList ((var,val):xs) uni = 
+                                 insertList xs $ updateAlias uni 
+                                 (Map.insert var val $ alias uni)
 
 ------------------------ Evaluation function
 sh :: Complex -> Out -> Uni  -> IO (Uni)
@@ -126,38 +145,51 @@ sh (Higher Filter c1 c2) out uni = do
 
 sh (Higher ZipWith c1 c2) out uni = undefined
 
-sh (Statement (Command cmd args)) out uni = do
-  -- then lookup also in aliases -- this needs Maybe monad sequencing!
-  let action = lookup cmd inExecTable
-  case action of
-    (Just exec) -> do
-                   exec args out uni
-                   return uni
-    Nothing     -> do
+-- replace the cmd with the string in alias
+-- redo the parsing and redo eval
+sh st@(Statement (Command cmd args)) out uni =
+  case (Map.lookup cmd $ alias uni) of -- check alias
+    (Just (Quoted s)) -> do
+      newUni <- eval (s ++ " " ++ (intercalate " " (map show args))) uni
+      return newUni
+    _                 -> do
+      let action = lookup cmd inExecTable
+      case action of
+        (Just exec) -> do
+          newUni <- exec args out uni
+          return newUni
+        Nothing     -> do
 --      putStrLn $ cmd ++ (unlines $ output uni)
-      (cod, stOut, stErr) <- readProcessWithExitCode cmd
-                             (map show args) $ unlines $ output uni
+          (cod, stOut, stErr) <- readProcessWithExitCode cmd 
+                                 (map show args) $ unlines $ output uni
 --      putStrLn $ cmd ++ " | " ++ ( show cod )
-      let e = case cod of
-            ExitSuccess -> 0
-            ExitFailure z -> z
-      c <- pp out $ stOut
-      return $ resolve (updateExitCode uni e) c
+          let e = case cod of
+                ExitSuccess -> 0
+                ExitFailure z -> z
+          c <- pp out $ stOut
+          return $ resolve (updateExitCode uni e) c
 
-sh (Statement (Val (String cmd))) out uni = do
-  let action = lookup cmd inExecTable
-  case action of
-    (Just exec) -> do
-                   exec [] out uni
-                   return uni
-    Nothing     -> do
-      (cod, stOut, stErr) <-  readProcessWithExitCode cmd
+-- alias in this case is simple 
+-- match the alias and redo eval
+sh (Statement (Val (String cmd))) out uni =
+  case (Map.lookup cmd $ alias uni) of -- check alias
+    (Just (Quoted s)) -> do
+      newUni <- eval s uni
+      return newUni
+    _                 -> do
+      let action = lookup cmd inExecTable
+      case action of
+        (Just exec) -> do
+          newUni <- exec [] out uni
+          return newUni
+        Nothing     -> do
+          (cod, stOut, stErr) <-  readProcessWithExitCode cmd
                               [] $ unlines $ output uni
-      let e = case cod of
-            ExitSuccess -> 0
-            ExitFailure z -> z
-      c <- pp out $ stOut
-      return $ resolve (updateExitCode uni e) c
+          let e = case cod of
+                ExitSuccess -> 0
+                ExitFailure z -> z
+          c <- pp out $ stOut
+          return $ resolve (updateExitCode uni e) c
 
 sh v@(Statement (Val _)) out uni = do
   pp Screen $ show v -- TODO: needed?
@@ -165,6 +197,14 @@ sh v@(Statement (Val _)) out uni = do
 
 sh v@(Statement (Assign var val)) out uni = do
   return $ updateVars uni (Map.insert var val $ variables uni)
+
+eval :: String -> Uni -> IO (Uni)
+eval input uni =  case (parse parseComplex "Shell Statement" (input)) of
+  Left err -> do
+    putStrLn $ "No match" ++ show err
+    return uni
+  Right v  -> do
+    sh v Screen uni
 
 --------------- helpers
 
