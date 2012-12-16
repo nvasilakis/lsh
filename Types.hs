@@ -73,34 +73,34 @@ data Value =
     deriving (Eq)
 
 showStatement :: Statement -> String
-showStatement (Command cmd args) = "Command " ++ show cmd ++ " " ++ show args
-showStatement (Val val) = "Val (" ++ show val ++ ")"
-showStatement (Assign var val) = "Assign " ++ (show var) ++ " (" ++ show val ++ ")"
+showStatement (Command cmd args) = cmd ++ " : " ++ show args
+showStatement (Val val) = show val
+showStatement (Assign var val) = (show var) ++ " = " ++ (show val)
 instance Show Statement where show = showStatement
 
-showValue (String x) = "String " ++ show x
-showValue (Number x) = "Number " ++ show x
-showValue (Quoted x) = "Quoted " ++ show x
+showValue (String x) =  x
+showValue (Number x) = show x
+showValue (Quoted x) = show x
 instance Show Value where show = showValue
 
-showHigher (Map) = " Map"
-showHigher (Fold) = " Fold"
-showHigher (Filter) = " Filter"
-showHigher (ZipWith) = " ZipWith"
+showHigher (Map) = " map"
+showHigher (Fold) = " fold"
+showHigher (Filter) = " filter"
+showHigher (ZipWith) = " zipWith"
 instance Show Higher where show = showHigher
 
 showComplex :: Complex -> String
-showComplex (Pipe a b) = "Pipe (" ++ show a ++ ") (" ++ show b ++ ")"
-showComplex (Higher s a b) = "Higher" ++ show s ++ " (" ++ show a ++ ") (" ++ show b ++ ")"
-showComplex (Statement a) = "Statement (" ++ show a ++ ")"
+showComplex (Pipe a b) = show a ++ " | " ++ show b
+showComplex (Higher s a b) = show s ++ " {" ++ show a ++ "} {" ++ show b ++ "}"
+showComplex (Statement a) = show a
 showComplex (Noop) = show "\n"
-showComplex (Alias a) = "Alias " ++ show a
+showComplex (Alias a) = "alias " ++ show a
 instance Show Complex where show = showComplex
                             
 showComplete :: Complete -> String
-showComplete (Complex c) = "Complex (" ++ show c ++ ")"
-showComplete (Semi a) = "Semi (" ++ show a ++ ")"
-showComplete (Ssep a b) = "Ssep (" ++ show a ++ ") (" ++ show b ++ ")"
+showComplete (Complex c) = show c
+showComplete (Semi a) = show a ++ ";"
+showComplete (Ssep a b) = show a ++ " ; " ++ show b
 instance Show Complete where show = showComplete
 
 -- Specific functions for the record; I guess the only advantage
