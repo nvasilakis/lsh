@@ -136,6 +136,13 @@ parseQuoted = do
     x <- many (noneOf "\\\"" <|> parseQuotes) -- any character except \ or "
     char '"'
     return $ Quoted x
+    
+parseSquoted :: Parser Value
+parseSquoted = do
+    char '\''
+    x <- many (noneOf "\\\'" <|> parseQuotes) -- any character except \ or '
+    char '\''
+    return $ Quoted x
 
 parseQuotes :: Parser Char-- parse \\ and \"
 parseQuotes = do
@@ -178,6 +185,18 @@ replaceDollar uni input =
        Left err -> input
        Right s  -> concat s
 
+---------- Parse Alias Arguments
+parseAliasArgs :: Parser (Variable,Value)
+parseAliasArgs = do
+  skipMany space
+  var <- parseAssVar
+  char '='
+  val <- parseSquoted
+  skipMany space
+  return (var,val)
+  
+--parseAliasQuotes
+  
 ---------- Parse Helpers -- used mostly for testing
 r :: String -> String -- Read helper for Complex statements
 r input = case parse parseComplex "Shell Statement" input of
