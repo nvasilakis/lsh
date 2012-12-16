@@ -34,12 +34,17 @@ instance Arbitrary Higher where
 --if do not add frequency here some test case cannot finish generating
 instance Arbitrary Complex where
   arbitrary = frequency [(4, astate),
+                         (3, aalias),
                          (2, apipe),
                          (1, ahigher)
                         ] 
     where astate = liftM Statement arbitrary
           apipe = oneof [liftM2 Pipe arbitrary astate,
                          liftM2 Pipe arbitrary ahigher]
+          aalias = liftM Alias (oneof 
+                                [elements [
+                                    [String "a='b'"],
+                                    [String "cd='sdf'",String "ls='sdf'"]]])
           ahigher = oneof [liftM3 Higher arbitrary arbitrary arbitrary]
   
   shrink _ = []

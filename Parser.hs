@@ -42,8 +42,8 @@ parseSep c1 = do
 
 parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
-               try parseAlias <|>
                try parsePipe <|>
+               try parseAlias <|>
                try parseHigher <|>
                try parseStatement
 
