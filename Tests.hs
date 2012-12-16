@@ -1,5 +1,3 @@
-module Tests where
-
 import Types
 import Parser
 
