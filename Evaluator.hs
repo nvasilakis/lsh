@@ -113,6 +113,8 @@ sh (Pipe c1 c2) out uni = do
   return uniLast
 
 --sh (Semi c1) out uni = sh c1 Screen uni
+  
+sh (Alias args) out uni = lalias args out uni
 
 sh (Noop) out uni = do -- TODO: what if in middle of pipeline
   pp Screen ""

@@ -42,6 +42,7 @@ parseSep c1 = do
 
 parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
+               try parseAlias <|>
                try parsePipe <|>
                try parseHigher <|>
                try parseStatement
@@ -56,6 +57,7 @@ parseNoOp = do
 parsePipe :: Parser Complex
 parsePipe = parserBind base rest
   where base = try parseNoOp <|>
+               try parseAlias <|>
                try parseHigher <|>
                try parseStatement
         rest x = pipe x <|> return x
@@ -136,13 +138,6 @@ parseQuoted = do
     x <- many (noneOf "\\\"" <|> parseQuotes) -- any character except \ or "
     char '"'
     return $ Quoted x
-    
-parseSquoted :: Parser Value
-parseSquoted = do
-    char '\''
-    x <- many (noneOf "\\\'" <|> parseQuotes) -- any character except \ or '
-    char '\''
-    return $ Quoted x
 
 parseQuotes :: Parser Char-- parse \\ and \"
 parseQuotes = do
@@ -185,7 +180,23 @@ replaceDollar uni input =
        Left err -> input
        Right s  -> concat s
 
----------- Parse Alias Arguments
+---------- Parse Alias
+parseAlias :: Parser Complex
+parseAlias = do
+  skipMany space
+  string "alias"
+  l <- many parseAliasArgs
+  return $ Alias (map convertAliasArgs l)
+  
+convertAliasArgs :: (Variable,Value) -> Value
+convertAliasArgs (var,String val) = 
+  String (var ++ "='" ++ val ++ "'")
+convertAliasArgs (var,Quoted val) =
+  String (var ++ "='" ++ val ++ "'")
+convertAliasArgs (var,Number val) =
+  String (var ++ "='" ++ show val ++ "'")
+  
+
 parseAliasArgs :: Parser (Variable,Value)
 parseAliasArgs = do
   skipMany space
@@ -194,7 +205,13 @@ parseAliasArgs = do
   val <- parseSquoted
   skipMany space
   return (var,val)
-  
+
+parseSquoted :: Parser Value
+parseSquoted = do
+    char '\''
+    x <- many (noneOf "\\\'" <|> parseQuotes) -- any character except \ or '
+    char '\''
+    return $ Quoted x
 --parseAliasQuotes
   
 ---------- Parse Helpers -- used mostly for testing
