@@ -44,18 +44,17 @@ build-type:          Simple
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.8
 
-Test-Suite tests
-    type:           exitcode-stdio-1.0
-    main-is:        Tests.hs
-    build-depends:  base
-
 executable lsh
   -- .hs or .lhs file containing the Main module.
-  -- main-is:             
+  main-is:             Main.hs
   
   -- Modules included in this executable, other than Main.
   -- other-modules:       
   
   -- Other library packages from which modules are imported.
   build-depends:       base ==4.5.*, containers ==0.4.*, parsec ==3.1.*, process ==1.1.*, directory ==1.1.*, mtl ==2.1.*, HUnit ==1.2.*, QuickCheck ==2.5.*, pretty ==1.1.*
-  
+
+Test-Suite Tests
+    type:           exitcode-stdio-1.0
+    main-is:        Tests.hs
+    build-depends:  base, QuickCheck, parsec, HUnit, containers, pretty
