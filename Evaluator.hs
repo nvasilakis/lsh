@@ -127,7 +127,6 @@ sh (Higher Map c1 c2) out uni = do
   return $ updateOutput uni2 results
   where lmap :: Complex -> [String] -> IO ([String])
         lmap c (x:xs) = do
-          putStrLn $ "heyhey " ++ x
           u <- sh c Redirect $ updateOutput defaultUni [x]
           liftM2 (++) (return $ output u) (lmap c xs)
         lmap _ [] = return ([])
