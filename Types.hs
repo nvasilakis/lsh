@@ -78,9 +78,9 @@ showStatement (Val val) = show val
 showStatement (Assign var val) = (show var) ++ " = " ++ (show val)
 instance Show Statement where show = showStatement
 
-showValue (String x) =  x
+showValue (String x) = x
 showValue (Number x) = show x
-showValue (Quoted x) = show x
+showValue (Quoted x) = x
 instance Show Value where show = showValue
 
 showHigher (Map) = " map"
