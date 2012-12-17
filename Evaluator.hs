@@ -123,6 +123,7 @@ sh (Noop) out uni = do -- TODO: what if in middle of pipeline
 sh (Higher Map c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- lmap c1 $ output uni2
+  pp out $ unlines results
   return $ updateOutput uni2 results
   where lmap :: Complex -> [String] -> IO ([String])
         lmap c (x:xs) = do
@@ -135,7 +136,7 @@ sh (Higher Fold c1 c2) out uni = undefined
 sh (Higher Filter c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- lfilter c1 $ output uni2
---  putStrLn $ unlines results
+  pp out $ unlines results
   return $ updateOutput uni2 results
   where lfilter :: Complex -> [String] -> IO ([String])
         lfilter c (x:xs) = do  -- create a fake uni
@@ -201,7 +202,7 @@ sh v@(Statement (Assign var val)) out uni = do
   return $ updateVars uni (Map.insert var val $ variables uni)
 
 eval :: String -> Uni -> IO (Uni)
-eval input uni =  case (parse parseComplex "Shell Statement" (input)) of
+eval input uni = case (parse parseComplex "Shell Statement" (input)) of
   Left err -> do
     putStrLn $ "No match" ++ show err
     return uni
