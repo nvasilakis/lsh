@@ -123,12 +123,13 @@ sh (Noop) out uni = do -- TODO: what if in middle of pipeline
 sh (Higher Map c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- lmap c1 $ output uni2
-  pp out $ (intercalate "\n" results) ++ "\n"
+  pp out $ unlines results
   return $ updateOutput uni2 results
   where lmap :: Complex -> [String] -> IO ([String])
         lmap c (x:xs) = do
+          putStrLn $ "heyhey " ++ x
           u <- sh c Redirect $ updateOutput defaultUni [x]
-          liftM2 (:) (return (x)) (lmap c xs)
+          liftM2 (++) (return $ output u) (lmap c xs)
         lmap _ [] = return ([])
 
 sh (Higher Fold c1 c2) out uni = undefined
@@ -136,7 +137,7 @@ sh (Higher Fold c1 c2) out uni = undefined
 sh (Higher Filter c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- lfilter c1 $ output uni2
-  pp out $ (intercalate "\n" results) ++ "\n"
+  pp out $ unlines results
   return $ updateOutput uni2 results
   where lfilter :: Complex -> [String] -> IO ([String])
         lfilter c (x:xs) = do  -- create a fake uni
