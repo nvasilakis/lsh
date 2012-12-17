@@ -123,7 +123,7 @@ sh (Noop) out uni = do -- TODO: what if in middle of pipeline
 sh (Higher Map c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- lmap c1 $ output uni2
-  pp out $ unlines results
+  pp out $ (intercalate "\n" results) ++ "\n"
   return $ updateOutput uni2 results
   where lmap :: Complex -> [String] -> IO ([String])
         lmap c (x:xs) = do
@@ -136,7 +136,7 @@ sh (Higher Fold c1 c2) out uni = undefined
 sh (Higher Filter c1 c2) out uni = do
   uni2 <- sh c2 Redirect uni
   results <- lfilter c1 $ output uni2
-  pp out $ unlines results
+  pp out $ (intercalate "\n" results) ++ "\n"
   return $ updateOutput uni2 results
   where lfilter :: Complex -> [String] -> IO ([String])
         lfilter c (x:xs) = do  -- create a fake uni
@@ -162,10 +162,8 @@ sh st@(Statement (Command cmd args)) out uni =
           newUni <- exec args out uni
           return newUni
         Nothing     -> do
---      putStrLn $ cmd ++ (unlines $ output uni)
           (cod, stOut, stErr) <- readProcessWithExitCode cmd 
-                                 (map show args) $ unlines $ output uni
---      putStrLn $ cmd ++ " | " ++ ( show cod )
+                                 (map show args) $ intercalate "\n" $ output uni
           let e = case cod of
                 ExitSuccess -> 0
                 ExitFailure z -> z
@@ -174,7 +172,7 @@ sh st@(Statement (Command cmd args)) out uni =
 
 -- alias in this case is simple 
 -- match the alias and redo eval
-sh (Statement (Val (String cmd))) out uni =
+sh (Statement (Val (String cmd))) out uni = do
   case (Map.lookup cmd $ alias uni) of -- check alias
     (Just (Quoted s)) -> do
       newUni <- eval s uni
@@ -186,8 +184,8 @@ sh (Statement (Val (String cmd))) out uni =
           newUni <- exec [] out uni
           return newUni
         Nothing     -> do
-          (cod, stOut, stErr) <-  readProcessWithExitCode cmd
-                              [] $ unlines $ output uni
+          (cod, stOut, stErr) <- readProcessWithExitCode cmd
+                                 [] $ intercalate "\n" $ output uni
           let e = case cod of
                 ExitSuccess -> 0
                 ExitFailure z -> z
