@@ -1,10 +1,19 @@
 import Types
 import Parser
-
+import Evaluator
+import ConfigFile
 import Test.HUnit
 import Text.ParserCombinators.Parsec
+import Text.Parsec.Prim hiding (try)
+import qualified Text.ParserCombinators.Parsec.Token as PT
 import Test.QuickCheck
 import Control.Monad
+import Data.Map (Map)
+import qualified Data.Map as Map
+import Text.ParserCombinators.Parsec
+import System.Environment
+import System.Directory
+import Data.Char
 
 --quickcheck start
   
@@ -75,7 +84,8 @@ runStaticTests = runTestTT $ TestList testList
 testList :: [Test]
 testList = [ tStatementVal,
              tStatementAssign,
-             tStatementCommand ]
+             tStatementCommand,
+              tHigherTests ]
 
 parseStatementTest :: String -> Either ParseError Complex
 parseStatementTest str = parse parseStatement "Shell Statement" str
@@ -89,6 +99,21 @@ succeed (Right r) rt = if r == rt
 failure :: Either ParseError a -> Assertion
 failure (Left _) = assert True
 failure (Right _) = assert False
+
+evalHigherFunctionTest :: String -> IO String
+evalHigherFunctionTest str = do
+  let complex = case (parse parseComplex "Shell Parser" str) of 
+                  Left  _ -> Noop
+                  Right a -> a
+  uniResult <- sh complex Redirect defaultUni
+  return $ unlines(Types.output uniResult)
+
+succeedHigher :: String -> String -> Assertion
+succeedHigher input expected = do
+                    actual <- evalHigherFunctionTest input 
+                    if actual == expected
+                       then assert True
+                       else assert False                    
 
 tStatementVal :: Test
 tStatementVal =
@@ -164,3 +189,10 @@ tStatementCommand =
     --"sc7" ~: failure
     --(parseStatementTest "echo \"ab") ]
     -- these two are future features
+
+tHigherTests :: Test
+tHigherTests = 
+   "Test Higher Functions" ~:
+    TestList [
+     "sc1" ~: succeedHigher "filter (grep cabal) (ls)" "lsh.cabal\n",
+     "sc2" ~: succeedHigher "filter (grep cab) (ls)" "lsh.cabal\n"]
