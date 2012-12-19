@@ -10,18 +10,13 @@ import Types -- try to remove this one!
 import Parser
 import Evaluator
 import ConfigFile
-
---import Text.PrettyPrint.HughesPJ (Doc, (<+>),($$),(<>))
---import qualified Text.PrettyPrint.HughesPJ as PP
-
 import Control.Monad.Error
 import Control.Monad.State
 
+-- Main entry point for the shell
+--
 arglist = [ "-c"  -- non-interactive
           , "-v"] -- verbose
-
-testStore :: Map Variable Value
-testStore = Map.empty
 
 main :: IO ()
 main = do
@@ -41,6 +36,7 @@ main = do
            putStrLn $ "Unknown arg" ++ (show (args !! 0))
     otherwise -> putStrLn "Only 0-2 arguments!"
 
+-- The actual evaluation loop
 repl :: Uni  -> IO ()
 repl uni = do
   putStr $ ps1 $ configuration uni
@@ -49,8 +45,7 @@ repl uni = do
   newUni <- eval line uni
   repl (appendToHistory line newUni)
 
--- TODO: Append normally, and reverse when read
--- It also clears the previous output
+-- Function that appends to history, based on user input 
 appendToHistory :: String -> Uni -> Uni
 appendToHistory line uni =
   if (length line > 0) then
@@ -63,25 +58,19 @@ appendToHistory line uni =
     (alias uni)
     else uni
 
-simple :: [String] -> Uni -> String -- eliminating new line
+-- Simplify, by eliminating new line
+simple :: [String] -> Uni -> String 
 simple args uni = case (args !! 0) of
   "-f" -> "No parse file functionality"
   _    -> init . unlines $ history uni
 
+-- Configure PS1 left prompt 
 ps1 :: Config -> String
 ps1 conf = case (Map.lookup "prompt" conf) of
   Just x -> x
   Nothing -> "λ> "
 
-{-
-parseInit :: String -> IO (Config)
-parseInit init = case (parseFromFile file init) of
-    Left err -> return $ Map.empty
-    Right xs -> return $ Map.fromList (reverse xs)
--}
-
--- TODO: Add home into the config
--- looks first locally and then in home
+-- Checks locally and in the home directory for an .lshrc file
 lshInit :: IO (Config)
 lshInit = do
   x <- doesFileExist ".lshrc"
@@ -95,15 +84,10 @@ lshInit = do
 -- TODO: We could probably move Hist to Text
 lshHist :: IO (Hist)
 lshHist = do
---  h <- getHomeDirectory
---  let h = "./"
   x <- doesFileExist ( ".lsh_history")
   case x of
     True  -> do
       text <- readFile (".lsh_history")
-      --contents <- hGetContents handle
-      --putStrLn contents
-      --hClose handle
       return $ lines text
     False -> do
       return []

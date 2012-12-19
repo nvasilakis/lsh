@@ -1,6 +1,8 @@
 module Help where
 
---
+-- a simple helpme file, containing hardcoded strings, mostly for
+-- testing buildin functions and pipes
+
 lambda = "\n\
 \                              iIIIIIIIIIIIIIIIII~                               \n\
 \                        ,:IIIIIIIIIIIIIIIIIIIIIIIIIIII                          \n\
