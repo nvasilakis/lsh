@@ -7,8 +7,10 @@ import Types
 import Control.Monad
 import qualified Data.Map as Map
 
+-- Restricted characters
 restricted = "!#$%| >()\n\";"
 
+-- Function to parse a Complete type
 parseComplete :: Parser Complete
 parseComplete = parserBind base rest 
   where base = try parseCcomplex
@@ -20,13 +22,15 @@ parseComplete = parserBind base rest
                try (parseSep x)
           rest c
 
+-- Function to parse a Complex into Complete Type
 parseCcomplex :: Parser Complete
 parseCcomplex = do
   skipMany space
   c <- parseComplex
   skipMany space
   return $ Complex c
-  
+
+-- Function to parse semicolon as seperator
 parseSepSemi :: Complete -> Parser Complete
 parseSepSemi c1 = do
   skipMany space
