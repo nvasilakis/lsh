@@ -44,6 +44,7 @@ parseComplex :: Parser Complex
 parseComplex = try parseNoOp <|>
                try parsePipe <|>
                try parseAlias <|>
+               try parseHigher3 <|>
                try parseHigher <|>
                try parseStatement
 
@@ -58,6 +59,7 @@ parsePipe :: Parser Complex
 parsePipe = parserBind base rest
   where base = try parseNoOp <|>
                try parseAlias <|>
+               try parseHigher3 <|>
                try parseHigher <|>
                try parseStatement
         rest x = pipe x <|> return x
@@ -67,7 +69,19 @@ parsePipe = parserBind base rest
           y <- base
           skipMany space
           rest $ Pipe x y
-
+parseHigher3 :: Parser Complex
+parseHigher3 = do
+  skipMany space
+  hType <- parseHigherType
+  skipMany1 space
+  hFst <- parseParens
+  skipMany1 space
+  hSnd <- parseParens
+  skipMany1 space
+  hTrd <- parseParens
+  skipMany space
+  return $ Higher3 hType hFst hSnd hTrd
+  
 parseHigher :: Parser Complex
 parseHigher = do
   skipMany space
