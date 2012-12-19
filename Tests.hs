@@ -12,7 +12,6 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Text.ParserCombinators.Parsec
 import System.Environment
-import System.Directory
 import Data.Char
 
 --quickcheck start
