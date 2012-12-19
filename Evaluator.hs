@@ -152,22 +152,13 @@ sh (Higher3 ZipWith c1 c2 c3) out uni = do
   uni2 <- sh c2 Redirect uni
   uni3 <- sh c3 Redirect uni
   results <- lzipWith c1 (output uni2) (output uni3)
-  pp out $ unlines results
   return $ updateOutput uni results
   where lzipWith :: Complex -> [String] -> [String] -> IO ([String])
         lzipWith _ [] _ = return []
         lzipWith _ _ [] = return []
         lzipWith c (x:xs) (y:ys) = do
-          u <- eval ((display c) ++ " " ++ x ++ " " ++ y) defaultUni 
-          --putStrLn $ x ++ y
-          --u <- sh c Redirect $ updateOutput defaultUni [x]
+          u <- eval ((display c) ++ " " ++ x ++ " " ++ y) defaultUni
           liftM2 (++) (return $ output u) (lzipWith c xs ys)
-          {-
-          u <- sh c Redirect $ updateOutput defaultUni [x]
-          case (exitCode u) of
-            0 -> liftM2 (:) (return (x)) (lzipWith c xs ys)
-            _ -> lzipWith c xs ys
-          -}
 
 -- replace the cmd with the string in alias
 -- redo the parsing and redo eval
