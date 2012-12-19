@@ -15,7 +15,12 @@ symbol
 
 # lamda shell
 
-lsh is a new shell focused in bridging functional programming concepts into one of the most traditional (yet powerful) computer interfaces ever made -- the shell. The shell stands as an interface between the programmer and indispensable tools, the system administrator and the tasks he has to accomplish, the power user and the control over his machine.
+lsh is a  new shell focused in bridging  functional programming concepts
+into one of the most traditional (yet powerful) computer interfaces ever
+made  --  the shell.  The  shell  stands  as  an interface  between  the
+programmer  and indispensable  tools, the  system administrator  and the
+tasks he  has to  accomplish, the  power user and  the control  over his
+machine.
 
 # authors
 
@@ -29,7 +34,10 @@ http://github.com/nvasilakis/lsh
 
 # files
 
-lsh uses Cabal for building and packaging Haskell libraries and programs. This way users can leverage the common interface for package authors and distributors to easily build lsh in a portable way, administer dependencies etc.
+lsh  uses  Cabal  for  building  and  packaging  Haskell  libraries  and
+programs. This way  users can leverage the common  interface for package
+authors  and  distributors  to  easily  build lsh  in  a  portable  way,
+administer dependencies etc.
 
 Nevertheless, we list the modules our project is comprised of:
 
