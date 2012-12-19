@@ -1,4 +1,3 @@
-{- credit for code to http://www.serpentine.com/blog/2007/01/31/parsing-a-simple-config-file-in-haskell/ -}
 module ConfigFile (Config, readConfig, file) where
 import Data.Char
 import Control.Monad
@@ -8,6 +7,9 @@ import Data.Either
 import Data.Maybe
 import Types
 
+-- The main structure of this module was based on an idea by BoS, in his
+-- serpentine blog. Given a file, we parse the configuration, using
+-- simple parsec combinators, as demonstrated in class (and homework).
 readConfig:: SourceName -> IO (Config)
 readConfig name = do
   result <- parseFromFile file name

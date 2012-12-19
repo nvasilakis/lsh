@@ -42,6 +42,7 @@ data Complex =
     Pipe Complex Complex            -- echo "a b" | grep 'a'
 --  | Semi Complex                    -- echo "a b"; -- echo "a b"; echo "c"
   | Higher Higher Complex Complex   -- map/fold/filter/zipWith
+  | Higher3 Higher Complex Complex Complex
   | Statement Statement             -- echo "a b"
   | Alias Args
   | Noop
@@ -92,6 +93,7 @@ instance Show Higher where show = showHigher
 showComplex :: Complex -> String
 showComplex (Pipe a b) = show a ++ " | " ++ show b
 showComplex (Higher s a b) = show s ++ " {" ++ show a ++ "} {" ++ show b ++ "}"
+showComplex (Higher3 s a b c) = show s ++ " {" ++ show a ++ "} {" ++ show b ++ "} {" ++ show c ++ "}"
 showComplex (Statement a) = show a
 showComplex (Noop) = show "\n"
 showComplex (Alias a) = "alias " ++ show a
