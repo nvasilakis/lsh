@@ -194,4 +194,8 @@ tHigherTests =
    "Test Higher Functions" ~:
     TestList [
      "sc1" ~: succeedHigher "filter (grep cabal) (ls)" "lsh.cabal\n",
-     "sc2" ~: succeedHigher "filter (grep cab) (ls)" "lsh.cabal\n"]
+     "sc2" ~: succeedHigher "filter (grep cab) (ls)" "lsh.cabal\n",
+     "sc3" ~: succeedHigher "map (grep cab) (ls)" "lsh.cabal\n",
+     "sc4" ~: succeedHigher "map (grep cabal) (ls)" "lsh.cabal\n",
+     "sc5" ~: succeedHigher "map (grep .md) (ls)" "README.md\n",
+     "sc6" ~: succeedHigher "map (cut -d: -f1) (echo abc-1234a :)" "abc-1234a\n"]
