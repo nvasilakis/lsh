@@ -109,7 +109,7 @@ sh :: Complex -> Out -> Uni  -> IO (Uni)
 sh (Pipe c1 c2) out uni = do
   -- We will need to print nothing here and push input fwd!
   uni2 <- sh c1 Redirect uni
-  uniLast <- sh c2 Screen uni2
+  uniLast <- sh c2 out uni2
   return uniLast
 
 --sh (Semi c1) out uni = sh c1 Screen uni
