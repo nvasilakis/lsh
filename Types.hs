@@ -108,59 +108,23 @@ instance Show Complete where show = showComplete
 -- Specific functions for the record; I guess the only advantage
 -- of this approach is to leverage benefits from the typesystem
 updateHistory :: Uni -> Hist -> Uni
-updateHistory u h = Universe
-                    (h)
-                    (configuration u)
-                    (variables u)
-                    (output u)
-                    (exitCode u)
-                    (alias u)
+updateHistory u h = u { history = h}
 
 -- updateConfiguration uc c = uc {configuration = c }
 updateConfiguration :: Uni -> Config -> Uni
-updateConfiguration u c = Universe
-                          (history u)
-                          (c)
-                          (variables u)
-                          (output u)
-                          (exitCode u)
-                          (alias u)
+updateConfiguration u c = u {configuration = c}
 
 updateVars :: Uni -> Vars -> Uni
-updateVars u v = Universe
-                   (history u)
-                   (configuration u)
-                   (v)
-                   (output u)
-                   (exitCode u)
-                   (alias u)
+updateVars u v = u { variables = v}
 
 updateOutput :: Uni -> [String] -> Uni
-updateOutput u o = Universe
-                   (history u)
-                   (configuration u)
-                   (variables u)
-                   (o)
-                   (exitCode u)
-                   (alias u)
+updateOutput u o = u {output = o}
 
 updateExitCode :: Uni -> Int -> Uni
-updateExitCode u e = Universe
-                   (history u)
-                   (configuration u)
-                   (variables u)
-                   (output u)
-                   (e)
-                   (alias u)
+updateExitCode u e = u { exitCode = e}
                    
 updateAlias :: Uni -> AliasStore -> Uni
-updateAlias u a = Universe
-                   (history u)
-                   (configuration u)
-                   (variables u)
-                   (output u)
-                   (exitCode u)
-                   (a)
+updateAlias u a = u { alias = a}
                    
 defaultUni :: Uni
 defaultUni = Universe [] Map.empty Map.empty [] 0 Map.empty
