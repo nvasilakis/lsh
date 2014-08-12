@@ -1,0 +1,11 @@
+http://books.google.com/books?hl=en&lr=&id=KKHZnUYF7UIC&oi=fnd&pg=PA75&dq=rc+shell+duff&ots=M4oNchuNmw&sig=8IZgzBLq42H2TvSS53YvY686CbQ#v=onepage&q=rc%20shell%20duff&f=false
+
+http://www.scsh.net/docu/scsh-paper/scsh-paper.html
+http://nellardo.com/lang/haskell/hash/
+http://www.cse.unsw.edu.au/~pls/thesis-topics/functionalshell.html
+http://www.haskell.org/haskellwiki/Applications_and_libraries/Operating_system#Shell
+
+# shell scripting with error handling and privilege separation
+http://donsbot.wordpress.com/2007/03/10/practical-haskell-shell-scripting-with-error-handling-and-privilege-separation/
+
+# Jesse's shell
